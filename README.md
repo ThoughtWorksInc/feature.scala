@@ -25,7 +25,7 @@ def makeAWithB()(implicit constructor: Constructor[() => A with B]): A with B = 
 val ab: A with B = makeAWithB()
 ```
 
-## Examples
+## Motivation
 
 This feature is useful for library authors.
 A library author may ask his user to create a `trait` type, then dynamically mix-in it with the features provided by the library.
@@ -83,7 +83,7 @@ val myAst = binaryOperator[Plus](
 print(myAst.compile()) // Output: "(1 + (3 - 5))"
 ```
 
-## Alternative approach
+## An alternative approach
 
 There is another approach to integrate partial implementation from users: asking users to provide custom callback functions or type classes.
 
