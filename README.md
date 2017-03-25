@@ -85,7 +85,7 @@ print(myAst.compile()) // Output: "(1 + (3 - 5))"
 
 ## Alternative approach
 
-Another approach to integrate partial implementation from users is asking users to provide custom callback functions or type classes.
+There is another approach to integrate partial implementation from users: asking users to provide custom callback functions or type classes.
 
 However, the callback functions or type classes approach will create additional object instances and additional references for each instance at run-time.
 On the other hand, the `Constructor.scala` approach create classes at compile-time and no additional run-time references.
