@@ -30,7 +30,7 @@ val ab: A with B = makeAWithB()
 This feature is useful for library authors.
 A library author may ask his user to create a `trait` type, then dynamically mix-in it with the features provided by the library.
 
-Suppose you are creating an [DSL](https://martinfowler.com/bliki/DomainSpecificLanguage.html) that compiles to JavaScript.
+Suppose you are creating a [DSL](https://martinfowler.com/bliki/DomainSpecificLanguage.html) that compiles to JavaScript.
 
 You want your DSL is extensible.
 For example, the DSL users should be able to create custom binary operators.
