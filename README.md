@@ -90,3 +90,7 @@ There is another approach to integrate partial implementation from users: asking
 However, the callback functions or type classes approach will create additional object instances and additional references for each instance at run-time.
 On the other hand, the `Constructor.scala` approach create classes at compile-time and no additional run-time references.
 As a result, at run-time, `Constructor.scala` approach will consume less memory, and performs less indirect access on memory.
+
+## Reducing number of generated classes
+
+When you `Constructor` an abstract class or trait, an anonymous will be created. You can use [shapeless.Cached](https://static.javadoc.io/com.chuusai/shapeless_2.12/2.3.2/shapeless/Cached.html) along with `Constructor` to sharing generated classes.
