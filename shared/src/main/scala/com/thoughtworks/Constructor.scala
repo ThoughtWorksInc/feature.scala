@@ -1,4 +1,4 @@
-package com.thoughtworks.deeplearning
+package com.thoughtworks
 
 import macrocompat.bundle
 
@@ -34,20 +34,20 @@ object Constructor {
                 q"$traitType"
               }
               q"""
-                new _root_.com.thoughtworks.deeplearning.Constructor(..$argumentDefinitions =>
+                new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
                   new ..${q"$classType(..$argumentIdentiers)" +: traitTrees} {}
                 )
               """
             case classType =>
               if (classType.dealias.typeSymbol.isAbstract) {
                 q"""
-                  new _root_.com.thoughtworks.deeplearning.Constructor(..$argumentDefinitions =>
+                  new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
                     new $classType(..$argumentIdentiers) {}
                   )
                 """
               } else {
                 q"""
-                  new _root_.com.thoughtworks.deeplearning.Constructor(..$argumentDefinitions =>
+                  new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
                     new $classType(..$argumentIdentiers)
                   )
                 """
