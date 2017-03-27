@@ -93,4 +93,4 @@ As a result, at run-time, `Constructor.scala` approach will consume less memory,
 
 ## Reducing number of generated classes
 
-When you create a `Constructor` for an abstract class or trait, an anonymous will be created. You can use [shapeless.Cached](https://static.javadoc.io/com.chuusai/shapeless_2.12/2.3.2/shapeless/Cached.html) along with `Constructor` to sharing generated classes.
+When you create a `Constructor` for an abstract class or trait, an anonymous class that extends the desired type will be created. You can use [shapeless.Cached](https://static.javadoc.io/com.chuusai/shapeless_2.12/2.3.2/shapeless/Cached.html) along with `Constructor` to sharing generated classes.
