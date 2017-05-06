@@ -28,7 +28,7 @@ object Constructor {
             q"$name" -> q"val $name: $argumentType"
           }).unzip
 
-          returnType match {
+          returnType.dealias match {
             case RefinedType(classType +: traitTypes, refinedScope) if refinedScope.isEmpty =>
               val traitTrees = for (traitType <- traitTypes) yield {
                 q"$traitType"
