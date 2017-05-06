@@ -10,8 +10,10 @@
 ## Usage
 
 ``` sbt
-// Add this line into your build.sbt
+// build.sbt
 libraryDependencies += "com.thoughtworks.constructor" %% "constructor" % "latest.release"
+
+libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided
 ```
 
 ``` scala
