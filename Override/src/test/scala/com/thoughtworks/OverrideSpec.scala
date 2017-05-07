@@ -13,9 +13,9 @@ final class OverrideSpec extends FreeSpec with Matchers {
 
   "Override should create class instances" in {
     val o = Override[Record.`'x -> String, 'y -> String`.T, A]
-    val a: A = o.newInstance(x = "", y = "")
-    a.getClass should be(classOf[A])
-    a.i should be(0)
+    val a: A = o.newInstance(x = "x", y = "y")
+    a.x should be("x")
+    a.y should be("y")
   }
 }
 
