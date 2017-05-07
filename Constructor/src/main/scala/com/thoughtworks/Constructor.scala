@@ -31,7 +31,7 @@ object Constructor {
           returnType.dealias match {
             case RefinedType(classType +: traitTypes, refinedScope) if refinedScope.isEmpty =>
               val traitTrees = for (traitType <- traitTypes) yield {
-                q"$traitType"
+                tq"$traitType"
               }
               q"""
                 new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
