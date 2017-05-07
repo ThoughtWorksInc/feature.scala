@@ -16,6 +16,11 @@ lazy val MixinJVM = Mixin.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val MixinJS = Mixin.js.addSbtFiles(file("../build.sbt.shared"))
 
+lazy val Override = crossProject.crossType(CrossType.Pure)
+
+lazy val OverrideJVM = Override.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val OverrideJS = Override.js.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
