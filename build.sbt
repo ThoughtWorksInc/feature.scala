@@ -4,8 +4,14 @@ publishArtifact := false
 
 organization in ThisBuild := "com.thoughtworks.constructor"
 
-lazy val constructor = (crossProject in file(".")).configureAll(_.addSbtFiles(file("../shared/build.sbt")))
+lazy val Constructor = crossProject.crossType(CrossType.Pure)
 
-lazy val constructorJVM = constructor.jvm
+lazy val ConstructorJVM = Constructor.jvm.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val constructorJS = constructor.js
+lazy val ConstructorJS = Constructor.js.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val Mixin = crossProject.crossType(CrossType.Pure)
+
+lazy val MixinJVM = Mixin.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val MixinJS = Mixin.js.addSbtFiles(file("../build.sbt.shared"))
