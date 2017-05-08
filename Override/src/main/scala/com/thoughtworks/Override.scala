@@ -25,7 +25,7 @@ object Override {
         case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
           superTypes.toStream.flatMap(demixin)
         case notRefinedType =>
-          notRefinedType #:: Stream.Empty
+          Stream(notRefinedType)
       }
     }
 
