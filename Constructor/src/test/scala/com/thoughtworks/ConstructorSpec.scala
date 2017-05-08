@@ -1,6 +1,7 @@
 package com.thoughtworks
 
 import org.scalatest.{FreeSpec, Matchers}
+import shapeless._
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -30,6 +31,10 @@ final class ConstructorSpec extends FreeSpec with Matchers {
     xc.i should be(2)
   }
 
+  "Constructor should create class instances from Mixin" in {
+    MixinFactory[A :: B :: C :: HNil]().newInstance.i should be(2)
+  }
+
 }
 
 private object ConstructorSpec {
@@ -55,4 +60,8 @@ private object ConstructorSpec {
     (constructor0.newInstance(), constructor1.newInstance())
   }
 
+  final case class MixinFactory[L <: HList]() {
+    def newInstance[M](implicit mixin: Mixin.Aux[L, M], constructor: Constructor[() => M]) =
+      constructor.newInstance()
+  }
 }

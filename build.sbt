@@ -4,7 +4,7 @@ publishArtifact := false
 
 organization in ThisBuild := "com.thoughtworks.constructor"
 
-lazy val Constructor = crossProject.crossType(CrossType.Pure)
+lazy val Constructor = crossProject.crossType(CrossType.Pure).dependsOn(Mixin % Test)
 
 lazy val ConstructorJVM = Constructor.jvm.addSbtFiles(file("../build.sbt.shared"))
 
@@ -16,7 +16,7 @@ lazy val MixinJVM = Mixin.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val MixinJS = Mixin.js.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val Override = crossProject.crossType(CrossType.Pure)
+lazy val Override = crossProject.crossType(CrossType.Pure).dependsOn(Mixin % Test)
 
 lazy val OverrideJVM = Override.jvm.addSbtFiles(file("../build.sbt.shared"))
 

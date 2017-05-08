@@ -14,6 +14,7 @@ trait Override[Vals, Result] extends RecordArgs {
 
 object Override {
 
+  /** SAM type conversion for Scala 2.10 / 2.11 */
   implicit final class FunctionOverride[Vals, Result](underlying: Vals => Result) extends Override[Vals, Result] {
     override def newInstanceRecord(vals: Vals): Result = underlying(vals)
   }
@@ -26,6 +27,15 @@ object Override {
   final class Macros(val c: whitebox.Context) extends CaseClassMacros with SingletonTypeUtils {
     import c.universe._
 
+    private def demixin(t: Type): Stream[Type] = {
+      t.dealias match {
+        case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
+          superTypes.toStream.flatMap(demixin)
+        case notRefinedType =>
+          notRefinedType #:: Stream.Empty
+      }
+    }
+
     def materialize[Vals: WeakTypeTag, Result: WeakTypeTag]: Tree = {
       val valsType = weakTypeOf[Vals]
       val pattern = unpackHListTpe(valsType).foldRight[Tree](pq"_root_.shapeless.HNil") { (field, accumulator) =>
@@ -33,27 +43,17 @@ object Override {
         pq"_root_.shapeless.::(${TermName(k)}, $accumulator)"
       }
       val argumentHListName = TermName(c.freshName("argumentHList"))
-      weakTypeOf[Result].dealias match {
-        case mixinType @ RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
-          val superTrees = for (superType <- superTypes) yield {
-            tq"$superType"
-          }
-          q"""
-            { $argumentHListName: $valsType =>
-              new ..$superTrees {
-                override val $pattern = $argumentHListName
-              }
-            } : _root_.com.thoughtworks.Override[$valsType, $mixinType]
-          """
-        case classType =>
-          q"""
-            { $argumentHListName: $valsType =>
-              new $classType {
-                override val $pattern = $argumentHListName
-              }
-            } : _root_.com.thoughtworks.Override[$valsType, $classType]
-          """
+      val mixinType = weakTypeOf[Result]
+      val superTrees = for (superType <- demixin(mixinType)) yield {
+        tq"$superType"
       }
+      q"""
+        { $argumentHListName: $valsType =>
+          new ..$superTrees {
+            override val $pattern = $argumentHListName
+          }
+        } : _root_.com.thoughtworks.Override[$valsType, $mixinType]
+      """
     }
   }
 }

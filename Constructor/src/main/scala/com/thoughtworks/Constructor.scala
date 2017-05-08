@@ -19,6 +19,16 @@ object Constructor {
   @bundle
   final class Macros(val c: blackbox.Context) {
     import c.universe._
+
+    private def demixin(t: Type): Stream[Type] = {
+      t.dealias match {
+        case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
+          superTypes.toStream.flatMap(demixin)
+        case notRefinedType =>
+          notRefinedType #:: Stream.Empty
+      }
+    }
+
     def materialize[F: WeakTypeTag]: Tree = {
       weakTypeOf[F].dealias match {
         case TypeRef(_, functionSymbol, argumentTypes :+ returnType)
@@ -28,8 +38,14 @@ object Constructor {
             q"$name" -> q"val $name: $argumentType"
           }).unzip
 
-          returnType.dealias match {
-            case RefinedType(classType +: traitTypes, refinedScope) if refinedScope.isEmpty =>
+          demixin(returnType) match {
+            case Stream(classType) if !classType.typeSymbol.isAbstract =>
+              q"""
+                new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
+                  new $classType(..$argumentIdentiers)
+                )
+              """
+            case classType +: traitTypes =>
               val traitTrees = for (traitType <- traitTypes) yield {
                 tq"$traitType"
               }
@@ -38,20 +54,6 @@ object Constructor {
                   new ..${q"$classType(..$argumentIdentiers)" +: traitTrees} {}
                 )
               """
-            case classType =>
-              if (classType.dealias.typeSymbol.isAbstract) {
-                q"""
-                  new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
-                    new $classType(..$argumentIdentiers) {}
-                  )
-                """
-              } else {
-                q"""
-                  new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
-                    new $classType(..$argumentIdentiers)
-                  )
-                """
-              }
           }
         case _ =>
           c.error(c.enclosingPosition, "Expect a function type")
