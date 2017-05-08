@@ -51,7 +51,7 @@ object Constructor {
               }
               q"""
                 new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
-                  new ..${q"$classType(..$argumentIdentiers)" +: traitTrees} {}
+                  new ..${(q"$classType(..$argumentIdentiers)" +: traitTrees).toSeq /* toSeq is a workaround for Scala 2.10 */} {}
                 )
               """
           }
