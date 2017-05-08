@@ -8,16 +8,9 @@ import scala.reflect.macros.whitebox
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-trait Override[Vals, Result] extends RecordArgs {
-  def newInstanceRecord(vals: Vals): Result
-}
+final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extends RecordArgs
 
 object Override {
-
-  /** SAM type conversion for Scala 2.10 / 2.11 */
-  implicit final class FunctionOverride[Vals, Result](underlying: Vals => Result) extends Override[Vals, Result] {
-    override def newInstanceRecord(vals: Vals): Result = underlying(vals)
-  }
 
   def apply[Vals, Result](implicit constructor: Override[Vals, Result]): Override[Vals, Result] = constructor
 
@@ -48,11 +41,11 @@ object Override {
         tq"$superType"
       }
       q"""
-        { $argumentHListName: $valsType =>
+        new _root_.com.thoughtworks.Override[$valsType, $mixinType]({$argumentHListName: $valsType =>
           new ..$superTrees {
             override val $pattern = $argumentHListName
           }
-        } : _root_.com.thoughtworks.Override[$valsType, $mixinType]
+        })
       """
     }
   }
