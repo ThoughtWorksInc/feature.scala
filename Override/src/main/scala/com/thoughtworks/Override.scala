@@ -53,7 +53,7 @@ object Override {
         val mixinType = weakTypeOf[Result]
 
         val injects = for {
-          baseClass <- mixinType.baseClasses
+          baseClass <- mixinType.baseClasses.reverse
           member <- baseClass.info.decls
           if member.isMethod && {
             c.internal.initialize(member)
@@ -89,6 +89,7 @@ object Override {
                   })
                   q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.scala.Predef.implicitly"
                 }
+//                c.info(c.enclosingPosition, show(result), true)
                 result
               } catch {
                 case NonFatal(e) =>
@@ -99,7 +100,7 @@ object Override {
         }
         val overridenTypes =
           (for {
-            baseClass <- mixinType.baseClasses
+            baseClass <- mixinType.baseClasses.reverse
             member <- baseClass.info.decls
             if member.isType
           } yield member)
@@ -119,15 +120,21 @@ object Override {
                     try {
                       import c.universe._
 
-                      val lowerBounds = members.map { member =>
+                      val lowerBounds = members.collect(scala.Function.unlift { member =>
                         val memberSymbol = member.asInstanceOf[Symbol]
                         val narrowSuperType = internal.superType(internal.thisType(c.internal.enclosingOwner),
                                                                  internal.thisType(memberSymbol.owner))
                         val TypeBounds(_, lowerBound) = memberSymbol.infoIn(narrowSuperType)
-                        tq"$lowerBound"
-                      }
+                        if (lowerBound =:= definitions.AnyTpe) {
+                          None
+                        } else {
+                          Some(tq"$lowerBound")
+                        }
+                      })
                       val compoundTypeTree = CompoundTypeTree(Template(lowerBounds.toList, noSelfType, Nil))
-                      q"override type ${TypeName(name)} = $compoundTypeTree"
+                      val result = q"override type ${TypeName(name)} = $compoundTypeTree"
+//                      c.info(c.enclosingPosition, show(result), true)
+                      result
                     } catch {
                       case NonFatal(e) =>
                         c.warning(c.enclosingPosition, show(e))
