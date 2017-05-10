@@ -16,8 +16,9 @@ final class OverrideSpec extends FreeSpec with Matchers {
     "create class instances" in {
       val o = Override[Record.`'x -> Int, 'y -> Float, 'z -> String`.T, A]
       val a: A = o.newInstance(x = 1, y = 4.5f, z = "z")
-      a.x should be("x")
-      a.y should be("y")
+      a.x should be(1)
+      a.y should be(4.5f)
+      a.z should be("z")
     }
 
     "merge abstract types" in {
