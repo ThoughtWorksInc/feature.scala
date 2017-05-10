@@ -19,10 +19,10 @@ final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extend
 }
 
 object Override {
-  
+
   final class inject extends StaticAnnotation
 
-  final class PartiallyAppliedNewInstance[Result] extends Dynamic {
+  private[Override] final class PartiallyAppliedNewInstance[Result] extends Dynamic {
     def applyRecord[Vals](vals: Vals)(implicit cachedOverride: Override[Vals, Result]): Result = {
       cachedOverride.newInstanceRecord(vals)
     }
