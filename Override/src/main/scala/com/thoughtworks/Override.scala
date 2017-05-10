@@ -13,7 +13,10 @@ import scala.util.control.NonFatal
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extends RecordArgs
+final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extends AnyVal with Dynamic {
+  def applyDynamic(method: String)(): Any = macro RecordMacros.forwardImpl
+  def applyDynamicNamed(method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
+}
 
 object Override {
 
