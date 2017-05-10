@@ -63,7 +63,6 @@ object Override {
         val mixinType = weakTypeOf[Result]
         val valsType = weakTypeOf[Vals]
         val valTypes = unpackHListTpe(valsType)
-        val local = c.freshName()
         object DealiasFieldType {
           def unapply(arg: Type): Option[(String, Type)] = arg.dealias match {
             case FieldType(keyType, v) =>
@@ -75,22 +74,24 @@ object Override {
             case _ => None
           }
         }
-        val pattern = valTypes.foldRight[Tree](pq"_root_.shapeless.HNil") { (field, accumulator) =>
-          val DealiasFieldType(k, v) = field
-          pq"_root_.shapeless.::(${TermName(raw"$local$$$k")}, $accumulator)"
-        }
-        val upvalues = for (DealiasFieldType(k, v) <- valTypes) yield {
+        val (temporaryNames, upvalues) = (for (DealiasFieldType(k, v) <- valTypes) yield {
           val overridingName = TermName(k)
           val setters = for {
             alternative <- mixinType.member(overridingName).alternatives
             setter = alternative.asMethod.setter
             if setter != NoSymbol
           } yield setter
-          if (setters.isEmpty || setters.exists(!_.isAbstract)) {
-            q"override val $overridingName: $v = ${TermName(raw"$local$$$k")}"
+          val temporaryName = TermName(c.freshName())
+          val upvalue = if (setters.isEmpty || setters.exists(!_.isAbstract)) {
+            q"override val $overridingName: $v = $temporaryName"
           } else {
-            q"override var $overridingName: $v= ${TermName(raw"$local$$$k")}"
+            q"override var $overridingName: $v = $temporaryName"
           }
+          (temporaryName, upvalue)
+        }).unzip
+        val pattern = valTypes.view.zip(temporaryNames).foldRight[Tree](pq"_root_.shapeless.HNil") {
+          case ((DealiasFieldType(k, v), temporaryName), accumulator) =>
+            pq"_root_.shapeless.::($temporaryName, $accumulator)"
         }
         val valuesType = mkHListTpe(for (DealiasFieldType(_, v) <- valTypes) yield v)
         val argumentHListName = TermName(c.freshName("argumentHList"))
