@@ -20,11 +20,13 @@ final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extend
 
 object Override {
 
+  private val logger = java.util.logging.Logger.getLogger("com.thoughtworks.Override")
+
   final class inject extends StaticAnnotation
 
   final class PartiallyAppliedNewInstance[Result] extends Dynamic {
-    def applyRecord[Vals](vals: Vals)(implicit cachedOverride: Cached[Override[Vals, Result]]): Result = {
-      cachedOverride.value.newInstanceRecord(vals)
+    def applyRecord[Vals](vals: Vals)(implicit cachedOverride: Override[Vals, Result]): Result = {
+      cachedOverride.newInstanceRecord(vals)
     }
     def applyDynamicNamed[Issues10307Workaround](method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
   }
@@ -59,11 +61,22 @@ object Override {
         val valsType = weakTypeOf[Vals]
         val valTypes = unpackHListTpe(valsType)
         val local = c.freshName()
+        object DealiasFieldType {
+          def unapply(arg: Type): Option[(String, Type)] = arg.dealias match {
+            case FieldType(keyType, v) =>
+              keyType.dealias match {
+                case SingletonSymbolType(k) =>
+                  Some(k, v)
+                case _ => None
+              }
+            case _ => None
+          }
+        }
         val pattern = valTypes.foldRight[Tree](pq"_root_.shapeless.HNil") { (field, accumulator) =>
-          val FieldType(SingletonSymbolType(k), v) = field
+          val DealiasFieldType(k, v) = field
           pq"_root_.shapeless.::(${TermName(raw"$local$$$k")}, $accumulator)"
         }
-        val upvalues = for (FieldType(SingletonSymbolType(k), v) <- valTypes) yield {
+        val upvalues = for (DealiasFieldType(k, v) <- valTypes) yield {
           val overridingName = TermName(k)
           val setters = for {
             alternative <- mixinType.member(overridingName).alternatives
@@ -71,12 +84,12 @@ object Override {
             if setter != NoSymbol
           } yield setter
           if (setters.isEmpty || setters.exists(!_.isAbstract)) {
-            q"val ${overridingName} = ${TermName(raw"$local$$$k")}"
+            q"val $overridingName: $v = ${TermName(raw"$local$$$k")}"
           } else {
-            q"var ${overridingName} = ${TermName(raw"$local$$$k")}"
+            q"var $overridingName: $v= ${TermName(raw"$local$$$k")}"
           }
         }
-        val valuesType = mkHListTpe(for (FieldType(_, v) <- valTypes) yield v)
+        val valuesType = mkHListTpe(for (DealiasFieldType(_, v) <- valTypes) yield v)
         val argumentHListName = TermName(c.freshName("argumentHList"))
 
         val injects = for {
@@ -120,7 +133,7 @@ object Override {
                 result
               } catch {
                 case NonFatal(e) =>
-                  c.info(c.enclosingPosition, show(e), true)
+                  e.printStackTrace()
                   throw e
               }
           })
@@ -164,7 +177,7 @@ object Override {
                       result
                     } catch {
                       case NonFatal(e) =>
-                        c.info(c.enclosingPosition, show(e), true)
+                        e.printStackTrace()
                         throw e
                     }
                 })
@@ -189,7 +202,7 @@ object Override {
         result
       } catch {
         case NonFatal(e) =>
-          c.info(c.enclosingPosition, show(e), true)
+          e.printStackTrace()
           throw e
       }
   }
