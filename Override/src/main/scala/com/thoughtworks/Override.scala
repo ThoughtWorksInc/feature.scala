@@ -18,10 +18,13 @@ final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extend
   def applyDynamicNamed(method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
 }
 
-object Override {
+object Override extends RecordArgs {
 
   final class inject extends StaticAnnotation
-  final class mixinLowerBounds extends StaticAnnotation
+
+  def newInstanceRecord[Result](vals: HList)(implicit `override`: Override[vals.type, Result]): Result = {
+    `override`.newInstanceRecord(vals)
+  }
 
   def apply[Vals, Result](implicit constructor: Override[Vals, Result]): Override[Vals, Result] = constructor
 
@@ -35,7 +38,6 @@ object Override {
     import c.universe._
 
     private val injectType = typeOf[inject]
-    private val mixinLowerBoundsType = typeOf[mixinLowerBounds]
     private def demixin(t: Type): Stream[Type] = {
       t.dealias match {
         case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
@@ -160,11 +162,12 @@ object Override {
         val result = q"""
         new _root_.com.thoughtworks.Override[$valsType, $mixinType]({$argumentHListName: $valuesType =>
           val $pattern = $argumentHListName
-          new ..$superTrees {
+          final class Foo extends ..$superTrees {
             ..$upvalues
             ..$overridenTypes
             ..$injects
           }
+          new Foo
         })
       """
 //        c.info(c.enclosingPosition, showCode(result), false)

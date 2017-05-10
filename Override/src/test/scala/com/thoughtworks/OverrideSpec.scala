@@ -39,6 +39,13 @@ final class OverrideSpec extends FreeSpec with Matchers {
       (local: Global0#Local).i should be(1)
       (local: Global1#Local).j should be(2)
     }
+
+    "create class instance according to parameter types" in {
+      val a: A = Override.newInstance[A](x = 1, y = 4.5f, z = "z")
+      a.x should be(1)
+      a.y should be(4.5f)
+      a.z should be("z")
+    }
   }
 }
 
@@ -70,8 +77,9 @@ private object OverrideSpec {
 
   }
   trait Global0 {
+    val i = 1
     trait LocalApi {
-      val i = 1
+      var i = 1 //Global0.this.i
     }
 
     type Local <: LocalApi
