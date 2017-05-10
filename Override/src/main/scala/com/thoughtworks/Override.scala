@@ -31,7 +31,8 @@ object Override {
     def applyDynamicNamed[Issues10307Workaround](method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
   }
 
-  /** @usecase def newInstance[Result](vals: Any*): Result */
+  /** @usecase def newInstance[Result](vals: Any*): Result = ???
+    */
   def newInstance[Result]: PartiallyAppliedNewInstance[Result] = new PartiallyAppliedNewInstance[Result]
 
   def apply[Vals, Result](implicit `override`: Override[Vals, Result]): Override[Vals, Result] = `override`
