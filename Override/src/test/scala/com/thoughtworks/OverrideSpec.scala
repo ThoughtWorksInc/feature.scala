@@ -55,6 +55,7 @@ private object OverrideSpec {
     def i: Int = 0
     val x: Int
     def y: Float
+    def y(x:Int) = x
     var z: String
   }
 

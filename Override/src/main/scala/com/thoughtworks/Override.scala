@@ -65,9 +65,12 @@ object Override {
         }
         val upvalues = for (FieldType(SingletonSymbolType(k), v) <- valTypes) yield {
           val overridingName = TermName(k)
-          val overridingMethod = mixinType.member(overridingName).asMethod
-          val setter = overridingMethod.setter
-          if (setter == NoSymbol || !setter.isAbstract) {
+          val setters = for {
+            alternative <- mixinType.member(overridingName).alternatives
+            setter = alternative.asMethod.setter
+            if setter != NoSymbol
+          } yield setter
+          if (setters.isEmpty || setters.exists(!_.isAbstract)) {
             q"val ${overridingName} = ${TermName(raw"$local$$$k")}"
           } else {
             q"var ${overridingName} = ${TermName(raw"$local$$$k")}"
