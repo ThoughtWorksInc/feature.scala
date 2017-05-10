@@ -14,8 +14,8 @@ final class OverrideSpec extends FreeSpec with Matchers {
 
   "Override should" - {
     "create class instances" in {
-      val o = Override[Record.`'x -> String, 'y -> String`.T, A]
-      val a: A = o.newInstance(x = "x", y = "y")
+      val o = Override[Record.`'x -> Int, 'y -> Float, 'z -> String`.T, A]
+      val a: A = o.newInstance(x = 1, y = 4.5f, z = "z")
       a.x should be("x")
       a.y should be("y")
     }
@@ -45,8 +45,9 @@ private object OverrideSpec {
 
   private[OverrideSpec] abstract class A {
     def i: Int = 0
-    def x: String
-    def y: String
+    def x: Int
+    def y: Float
+    def z: String
   }
 
   trait AbstractTypeOwner0 {

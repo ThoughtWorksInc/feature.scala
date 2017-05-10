@@ -48,10 +48,12 @@ object Override {
     def materialize[Vals: WeakTypeTag, Result: WeakTypeTag]: Tree =
       try {
         val valsType = weakTypeOf[Vals]
-        val pattern = unpackHListTpe(valsType).foldRight[Tree](pq"_root_.shapeless.HNil") { (field, accumulator) =>
+        val valTypes = unpackHListTpe(valsType)
+        val pattern = valTypes.foldRight[Tree](pq"_root_.shapeless.HNil") { (field, accumulator) =>
           val FieldType(SingletonSymbolType(k), v) = field
           pq"_root_.shapeless.::(${TermName(k)}, $accumulator)"
         }
+        val valuesType = mkHListTpe(for (FieldType(_, v) <- valTypes) yield v)
         val argumentHListName = TermName(c.freshName("argumentHList"))
         val mixinType = weakTypeOf[Result]
 
@@ -151,7 +153,7 @@ object Override {
           tq"$superType"
         }
         val result = q"""
-        new _root_.com.thoughtworks.Override[$valsType, $mixinType]({$argumentHListName: $valsType =>
+        new _root_.com.thoughtworks.Override[$valsType, $mixinType]({$argumentHListName: $valuesType =>
           new ..$superTrees {
             override val $pattern = $argumentHListName
             ..$overridenTypes
