@@ -8,7 +8,7 @@ lazy val secret = project settings(publishArtifact := false) configure { secret 
       import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
       secret.addSbtFilesFromGit(
         "https://github.com/ThoughtWorksInc/tw-data-china-continuous-delivery-password.git",
-        new UsernamePasswordCredentialsProvider(pat, ""),
+        new UsernamePasswordCredentialsProvider("tw-data-china-go-cd", pat),
         file("secret.sbt"))
     case None =>
       secret
