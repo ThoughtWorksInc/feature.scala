@@ -55,6 +55,7 @@ object Override {
 
     def materialize[Vals: WeakTypeTag, Result: WeakTypeTag]: Tree =
       try {
+        val mixinType = weakTypeOf[Result]
         val valsType = weakTypeOf[Vals]
         val valTypes = unpackHListTpe(valsType)
         val local = c.freshName()
@@ -63,12 +64,17 @@ object Override {
           pq"_root_.shapeless.::(${TermName(raw"$local$$$k")}, $accumulator)"
         }
         val upvalues = for (FieldType(SingletonSymbolType(k), v) <- valTypes) yield {
-          // Workaround for https://github.com/scala/bug/issues/1913
-          q"override val ${TermName(k)}: $v = ${TermName(raw"$local$$$k")}"
+          val overridingName = TermName(k)
+          val overridingMethod = mixinType.member(overridingName).asMethod
+          val setter = overridingMethod.setter
+          if (setter == NoSymbol || !setter.isAbstract) {
+            q"val ${overridingName} = ${TermName(raw"$local$$$k")}"
+          } else {
+            q"var ${overridingName} = ${TermName(raw"$local$$$k")}"
+          }
         }
         val valuesType = mkHListTpe(for (FieldType(_, v) <- valTypes) yield v)
         val argumentHListName = TermName(c.freshName("argumentHList"))
-        val mixinType = weakTypeOf[Result]
 
         val injects = for {
           baseClass <- mixinType.baseClasses.reverse
@@ -111,7 +117,7 @@ object Override {
                 result
               } catch {
                 case NonFatal(e) =>
-                  c.warning(c.enclosingPosition, show(e))
+                  c.info(c.enclosingPosition, show(e), true)
                   throw e
               }
           })
@@ -155,7 +161,7 @@ object Override {
                       result
                     } catch {
                       case NonFatal(e) =>
-                        c.warning(c.enclosingPosition, show(e))
+                        c.info(c.enclosingPosition, show(e), true)
                         throw e
                     }
                 })
@@ -180,7 +186,7 @@ object Override {
         result
       } catch {
         case NonFatal(e) =>
-          c.warning(c.enclosingPosition, show(e))
+          c.info(c.enclosingPosition, show(e), true)
           throw e
       }
   }

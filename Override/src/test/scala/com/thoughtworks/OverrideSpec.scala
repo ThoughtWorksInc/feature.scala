@@ -53,9 +53,9 @@ private object OverrideSpec {
 
   private[OverrideSpec] abstract class A {
     def i: Int = 0
-    def x: Int
+    val x: Int
     def y: Float
-    def z: String
+    var z: String
   }
 
   trait AbstractTypeOwner0 {
