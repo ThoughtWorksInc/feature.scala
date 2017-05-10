@@ -49,9 +49,14 @@ object Override {
       try {
         val valsType = weakTypeOf[Vals]
         val valTypes = unpackHListTpe(valsType)
+        val local = c.freshName()
         val pattern = valTypes.foldRight[Tree](pq"_root_.shapeless.HNil") { (field, accumulator) =>
           val FieldType(SingletonSymbolType(k), v) = field
-          pq"_root_.shapeless.::(${TermName(k)}, $accumulator)"
+          pq"_root_.shapeless.::(${TermName(raw"$local$$$k")}, $accumulator)"
+        }
+        val upvalues = for (FieldType(SingletonSymbolType(k), v) <- valTypes) yield {
+          // Workaround for https://github.com/scala/bug/issues/1913
+          q"override val ${TermName(k)}: $v = ${TermName(raw"$local$$$k")}"
         }
         val valuesType = mkHListTpe(for (FieldType(_, v) <- valTypes) yield v)
         val argumentHListName = TermName(c.freshName("argumentHList"))
@@ -154,8 +159,9 @@ object Override {
         }
         val result = q"""
         new _root_.com.thoughtworks.Override[$valsType, $mixinType]({$argumentHListName: $valuesType =>
+          val $pattern = $argumentHListName
           new ..$superTrees {
-            override val $pattern = $argumentHListName
+            ..$upvalues
             ..$overridenTypes
             ..$injects
           }
