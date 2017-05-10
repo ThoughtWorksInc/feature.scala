@@ -191,14 +191,12 @@ object Override {
           tq"$superType"
         }
         val result = q"""
-        new _root_.com.thoughtworks.Override[$valsType, $mixinType]({$argumentHListName: $valuesType =>
-          val $pattern = $argumentHListName
-          final class Foo extends ..$superTrees {
+        new _root_.com.thoughtworks.Override[$valsType, $mixinType](_ match { case $pattern =>
+          new ..$superTrees {
             ..$upvalues
             ..$overridenTypes
             ..$injects
           }
-          new Foo
         })
       """
 //        c.info(c.enclosingPosition, showCode(result), false)
