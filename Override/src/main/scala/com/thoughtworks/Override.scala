@@ -18,15 +18,21 @@ final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extend
   def applyDynamicNamed(method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
 }
 
-object Override extends RecordArgs {
+object Override {
 
   final class inject extends StaticAnnotation
 
-  def newInstanceRecord[Result](vals: HList)(implicit `override`: Override[vals.type, Result]): Result = {
-    `override`.newInstanceRecord(vals)
+  final class PartiallyAppliedNewInstance[Result] extends Dynamic {
+    def applyRecord[Vals](vals: Vals)(implicit cachedOverride: Cached[Override[Vals, Result]]): Result = {
+      cachedOverride.value.newInstanceRecord(vals)
+    }
+    def applyDynamicNamed[Issues10307Workaround](method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
   }
 
-  def apply[Vals, Result](implicit constructor: Override[Vals, Result]): Override[Vals, Result] = constructor
+  /** @usecase def newInstance[Result](vals: Any*): Result */
+  def newInstance[Result]: PartiallyAppliedNewInstance[Result] = new PartiallyAppliedNewInstance[Result]
+
+  def apply[Vals, Result](implicit `override`: Override[Vals, Result]): Override[Vals, Result] = `override`
 
   implicit def materialize[Vals, Result]: Override[Vals, Result] = macro Macros.materialize[Vals, Result]
 

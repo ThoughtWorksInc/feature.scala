@@ -1,6 +1,6 @@
 package com.thoughtworks
 
-import com.thoughtworks.Override.{inject, mixinLowerBounds}
+import com.thoughtworks.Override.{inject}
 import org.scalatest.{FreeSpec, Matchers}
 import shapeless._
 import shapeless.labelled.FieldType
