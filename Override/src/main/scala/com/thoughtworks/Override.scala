@@ -87,9 +87,9 @@ object Override {
             if setter != NoSymbol
           } yield setter
           if (setters.isEmpty || setters.exists(!_.isAbstract)) {
-            q"val $overridingName: $v = ${TermName(raw"$local$$$k")}"
+            q"override val $overridingName: $v = ${TermName(raw"$local$$$k")}"
           } else {
-            q"var $overridingName: $v= ${TermName(raw"$local$$$k")}"
+            q"override var $overridingName: $v= ${TermName(raw"$local$$$k")}"
           }
         }
         val valuesType = mkHListTpe(for (DealiasFieldType(_, v) <- valTypes) yield v)
