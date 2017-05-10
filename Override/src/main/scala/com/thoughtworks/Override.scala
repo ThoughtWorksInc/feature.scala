@@ -19,9 +19,7 @@ final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extend
 }
 
 object Override {
-
-  private val logger = java.util.logging.Logger.getLogger("com.thoughtworks.Override")
-
+  
   final class inject extends StaticAnnotation
 
   final class PartiallyAppliedNewInstance[Result] extends Dynamic {
