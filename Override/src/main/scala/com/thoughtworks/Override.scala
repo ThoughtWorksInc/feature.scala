@@ -195,7 +195,7 @@ object Override {
           tq"$superType"
         }
         val result = q"""
-        new _root_.com.thoughtworks.Override[$valsType, $mixinType](_ match { case $pattern =>
+        new _root_.com.thoughtworks.Override[$valsType, $mixinType]((_: $valuesType) match { case $pattern =>
           new ..$superTrees {
             ..$upvalues
             ..$overridenTypes
