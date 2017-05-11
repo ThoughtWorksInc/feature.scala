@@ -30,6 +30,9 @@ object Override {
     def applyRecord[Vals](vals: Vals)(implicit cachedOverride: Override[Vals, Result]): Result = {
       cachedOverride.newInstanceRecord(vals)
     }
+
+    def applyDynamic[Issues10307Workaround](method: String)(): Any = macro RecordMacros.forwardImpl
+
     def applyDynamicNamed[Issues10307Workaround](method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
   }
 
