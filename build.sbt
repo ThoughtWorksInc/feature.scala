@@ -22,7 +22,7 @@ lazy val DelayMacrosJVM = DelayMacros.jvm.addSbtFiles(file("../build.sbt.shared"
 
 lazy val DelayMacrosJS = DelayMacros.js.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val Override = crossProject.crossType(CrossType.Pure).dependsOn(DelayMacros, Mixin % Test)
+lazy val Override = crossProject.crossType(CrossType.Pure).dependsOn(DelayMacros, Constructor % Test, Mixin % Test)
 
 lazy val OverrideJVM = Override.jvm.addSbtFiles(file("../build.sbt.shared"))
 
