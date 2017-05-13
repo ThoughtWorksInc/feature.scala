@@ -1,4 +1,4 @@
-package com.thoughtworks.deeplearning
+package com.thoughtworks
 
 import scala.language.experimental.macros
 import scala.reflect.macros.Context
@@ -10,6 +10,6 @@ object Caller {
 
   def thisCaller(c: Context) = {
     import c.universe._
-    c.Expr[Caller[Any]](q"new _root_.com.thoughtworks.deeplearning.Caller[this.type](this)")
+    c.Expr[Caller[Any]](q"new _root_.com.thoughtworks.Caller[this.type](this)")
   }
 }
