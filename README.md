@@ -6,7 +6,7 @@
 
 **Caller.scala** is an implicit value that points to the function caller.
 
-## [Use cases taken from `sourcecode`'s feature request](https://github.com/lihaoyi/sourcecode/issues/9):
+## Use cases
 
 ### Getting the caller for logging or something:
 ``` scala
@@ -48,3 +48,7 @@ object Bar{
   Foo.getResource("/thing/file.txt") // loads resource from `Bar`s classloader, always
 }
 ```
+
+## Acknowledgements
+
+The use cases are taken from [`sourcecode`'s issue #9](https://github.com/lihaoyi/sourcecode/issues/9).
