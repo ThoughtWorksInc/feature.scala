@@ -6,10 +6,10 @@ import scala.reflect.macros.Context
 final case class Caller[+A](value: A)
 
 object Caller {
-  implicit def generate: Caller[Any] = macro thisCaller
+  implicit def generate[A]: Caller[A] = macro thisCaller[A]
 
-  def thisCaller(c: Context) = {
+  def thisCaller[A](c: Context): c.Expr[Caller[A]] = {
     import c.universe._
-    c.Expr[Caller[Any]](q"new _root_.com.thoughtworks.Caller[this.type](this)")
+    c.Expr[Caller[A]](q"new _root_.com.thoughtworks.Caller[this.type](this)")
   }
 }
