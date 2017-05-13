@@ -11,7 +11,7 @@
 ### Getting the caller for logging or something:
 ``` scala
 object Foo{
-  def log()(implicit caller: sourcecode.Caller[Any]) = {
+  def log()(implicit caller: Caller[Any]) = {
     println(caller.value)
   }
 }
@@ -24,7 +24,7 @@ object Bar{
 ``` scala
 class IKnowWhatImDoing
 object Foo{
-  def runDangerous()(implicit caller: sourcecode.Caller[IKnowWhatImDoing]) = {
+  def runDangerous()(implicit caller: Caller[IKnowWhatImDoing]) = {
     println(caller.value)
   }
 }
@@ -40,7 +40,7 @@ object Bar2 extends IKnowWhatImDoing{
 
 ``` scala
 object Foo{
-  def getResource(path: String)(implicit caller: sourcecode.Caller[_]) = {
+  def getResource(path: String)(implicit caller: Caller[_]) = {
     caller.value.getClass.getClassLoader.getResourceAsStream(path)
   }
 }
