@@ -1,7 +1,7 @@
 package com.thoughtworks.feature
 
 import scala.language.experimental.macros
-import scala.reflect.macros.Context
+import scala.reflect.macros.whitebox.Context
 
 final class Caller[+A](val value: A) extends AnyVal
 
