@@ -1,9 +1,6 @@
 package com.thoughtworks.feature
 
-import java.util.UUID
-
 import scala.language.experimental.macros
-import macrocompat.bundle
 
 import scala.annotation.StaticAnnotation
 import scala.reflect.macros.whitebox
@@ -12,7 +9,6 @@ import scala.util.control.NonFatal
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-@bundle
 trait DelayMacros {
   val c: whitebox.Context
   import c.universe._
@@ -44,7 +40,6 @@ object DelayMacros {
     def macroTransform(annottees: Any*): Any = macro AnnotationMacros.macroTransform
   }
 
-  @bundle
   private[DelayMacros] final class AnnotationMacros(val c: whitebox.Context) {
     import c.universe._
     def macroTransform(annottees: Tree*): Tree =

@@ -1,7 +1,5 @@
 package com.thoughtworks.feature
 
-import macrocompat.bundle
-
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
@@ -16,7 +14,6 @@ object Constructor {
 
   implicit def materialize[F]: Constructor[F] = macro Macros.materialize[F]
 
-  @bundle
   final class Macros(val c: blackbox.Context) {
     import c.universe._
 
