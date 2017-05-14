@@ -2,11 +2,11 @@ publishArtifact := false
 
 organization in ThisBuild := "com.thoughtworks.feature"
 
-lazy val Caller = crossProject
+lazy val Caller = crossProject.crossType(CrossType.Pure)
 
-lazy val CallerJVM = Caller.jvm.addSbtFiles(file("../shared/build.sbt.shared"))
+lazy val CallerJVM = Caller.jvm.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val CallerJS = Caller.js.addSbtFiles(file("../shared/build.sbt.shared"))
+lazy val CallerJS = Caller.js.addSbtFiles(file("../build.sbt.shared"))
 
 crossScalaVersions in ThisBuild := Seq("2.11.11", "2.12.2")
 
