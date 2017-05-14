@@ -1,4 +1,4 @@
-package com.thoughtworks
+package com.thoughtworks.feature
 
 import scala.language.experimental.macros
 import scala.reflect.macros.Context
@@ -10,6 +10,6 @@ object Caller {
 
   def thisCaller[A](c: Context): c.Expr[Caller[A]] = {
     import c.universe._
-    c.Expr[Caller[A]](q"new _root_.com.thoughtworks.Caller[this.type](this)")
+    c.Expr[Caller[A]](q"new _root_.com.thoughtworks.feature.Caller[this.type](this)")
   }
 }
