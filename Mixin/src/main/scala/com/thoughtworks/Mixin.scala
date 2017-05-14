@@ -1,4 +1,4 @@
-package com.thoughtworks
+package com.thoughtworks.feature
 import shapeless._
 
 trait Mixin[SuperTypes <: HList] {

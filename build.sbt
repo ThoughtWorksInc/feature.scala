@@ -4,9 +4,9 @@ organization in ThisBuild := "com.thoughtworks.feature"
 
 lazy val Caller = crossProject
 
-lazy val callerJVM = Caller.jvm.addSbtFiles(file("../shared/build.sbt.shared"))
+lazy val CallerJVM = Caller.jvm.addSbtFiles(file("../shared/build.sbt.shared"))
 
-lazy val callerJS = Caller.js.addSbtFiles(file("../shared/build.sbt.shared"))
+lazy val CallerJS = Caller.js.addSbtFiles(file("../shared/build.sbt.shared"))
 
 crossScalaVersions in ThisBuild := Seq("2.11.11", "2.12.2")
 
@@ -38,7 +38,7 @@ lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
-      inProjects(MixinJVM, ConstructorJVM, OverrideJVM)
+      inProjects(MixinJVM, ConstructorJVM, OverrideJVM, CallerJVM)
     },
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
   )

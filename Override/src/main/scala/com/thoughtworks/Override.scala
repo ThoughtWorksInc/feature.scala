@@ -1,5 +1,5 @@
-package com.thoughtworks
-import com.thoughtworks.DelayMacros.DelayTreeCreator
+package com.thoughtworks.feature
+import com.thoughtworks.feature.DelayMacros.DelayTreeCreator
 import macrocompat.bundle
 import shapeless._
 
@@ -195,7 +195,7 @@ object Override {
           tq"$superType"
         }
         val result = q"""
-        new _root_.com.thoughtworks.Override[$valsType, $mixinType]((_: $valuesType) match { case $pattern =>
+        new _root_.com.thoughtworks.feature.Override[$valsType, $mixinType]((_: $valuesType) match { case $pattern =>
           new ..$superTrees {
             ..$upvalues
             ..$overridenTypes

@@ -1,4 +1,4 @@
-package com.thoughtworks
+package com.thoughtworks.feature
 
 import macrocompat.bundle
 
@@ -41,7 +41,7 @@ object Constructor {
           demixin(returnType) match {
             case Stream(classType) if !classType.typeSymbol.isAbstract =>
               q"""
-                new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
+                new _root_.com.thoughtworks.feature.Constructor(..$argumentDefinitions =>
                   new $classType(..$argumentIdentiers)
                 )
               """
@@ -50,7 +50,7 @@ object Constructor {
                 tq"$traitType"
               }
               q"""
-                new _root_.com.thoughtworks.Constructor(..$argumentDefinitions =>
+                new _root_.com.thoughtworks.feature.Constructor(..$argumentDefinitions =>
                   new ..${(q"$classType(..$argumentIdentiers)" +: traitTrees).toSeq /* toSeq is a workaround for Scala 2.10 */} {}
                 )
               """

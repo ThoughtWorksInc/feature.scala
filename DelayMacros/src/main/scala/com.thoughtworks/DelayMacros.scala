@@ -1,4 +1,4 @@
-package com.thoughtworks
+package com.thoughtworks.feature
 
 import java.util.UUID
 
@@ -16,21 +16,21 @@ import scala.util.control.NonFatal
 trait DelayMacros {
   val c: whitebox.Context
   import c.universe._
-  import com.thoughtworks.DelayMacros._
+  import com.thoughtworks.feature.DelayMacros._
 
   final def delayType(creator: DelayTreeCreator): TypeDef = {
     val name = c.freshName()
     typeCreators.synchronized {
       typeCreators(name) = creator
     }
-    q"@_root_.com.thoughtworks.DelayMacros.delay type ${TypeName(name)}"
+    q"@_root_.com.thoughtworks.feature.DelayMacros.delay type ${TypeName(name)}"
   }
   final def delayValOrDef(creator: DelayTreeCreator): DefDef = {
     val name = c.freshName()
     valOrDefCreators.synchronized {
       valOrDefCreators(name) = creator
     }
-    q"@_root_.com.thoughtworks.DelayMacros.delay def ${TermName(name)}"
+    q"@_root_.com.thoughtworks.feature.DelayMacros.delay def ${TermName(name)}"
   }
 
 }

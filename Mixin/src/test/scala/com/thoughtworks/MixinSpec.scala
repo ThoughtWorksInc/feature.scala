@@ -1,6 +1,6 @@
-package com.thoughtworks
+package com.thoughtworks.feature
 
-import com.thoughtworks.MixinSpec._
+import com.thoughtworks.feature.MixinSpec._
 import org.scalatest.{FreeSpec, Matchers}
 import shapeless._
 import shapeless.ops.hlist.Comapped

@@ -1,13 +1,13 @@
-package com.thoughtworks
+package com.thoughtworks.feature
 
-import com.thoughtworks.Override.inject
+import com.thoughtworks.feature.Override.inject
 import org.scalatest.{FreeSpec, Matchers}
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class HyperparameterSpec extends FreeSpec with Matchers {
-  import com.thoughtworks.HyperparameterSpec._
+  import com.thoughtworks.feature.HyperparameterSpec._
   "Hyperparameter for Float" in {
     val hyperparameters = Override.newInstance[Hyperparameter.Lift with Hyperparameter.FixedLearningRate](fixedLearningRate = 0.125f)
     val weight = hyperparameters.lift(0.4f)

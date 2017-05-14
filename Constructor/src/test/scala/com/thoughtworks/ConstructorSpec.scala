@@ -1,4 +1,4 @@
-package com.thoughtworks
+package com.thoughtworks.feature
 
 import org.scalatest.{FreeSpec, Matchers}
 import shapeless._
