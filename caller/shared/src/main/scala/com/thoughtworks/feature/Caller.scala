@@ -3,7 +3,7 @@ package com.thoughtworks.feature
 import scala.language.experimental.macros
 import scala.reflect.macros.Context
 
-final case class Caller[+A](value: A)
+final class Caller[+A](val value: A) extends AnyVal
 
 object Caller {
   implicit def generate[A]: Caller[A] = macro thisCaller[A]
