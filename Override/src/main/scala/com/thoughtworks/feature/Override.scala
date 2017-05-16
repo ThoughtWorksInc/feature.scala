@@ -1,6 +1,5 @@
 package com.thoughtworks.feature
 import com.thoughtworks.Extractor._
-import com.thoughtworks.feature.DelayMacros.DelayTreeCreator
 import shapeless._
 
 import scala.annotation.StaticAnnotation
@@ -45,10 +44,7 @@ object Override {
 
   implicit def materialize[Vals, Result]: Override[Vals, Result] = macro Macros.materialize[Vals, Result]
 
-  private[Override] final class Macros(val c: whitebox.Context)
-      extends CaseClassMacros
-      with SingletonTypeUtils
-      with DelayMacros {
+  private[Override] final class Macros(val c: whitebox.Context) extends CaseClassMacros with SingletonTypeUtils {
     import c.universe._
 
     private val injectType = typeOf[inject]
