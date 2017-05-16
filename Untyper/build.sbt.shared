@@ -1,0 +1,3 @@
+libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+
+libraryDependencies += "com.thoughtworks.extractor" %% "extractor" % "2.1.0"

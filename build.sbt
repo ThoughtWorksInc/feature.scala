@@ -22,13 +22,22 @@ lazy val MixinJVM = Mixin.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val MixinJS = Mixin.js.addSbtFiles(file("../build.sbt.shared"))
 
+lazy val SyntacticTypeTree = crossProject.crossType(CrossType.Pure)
+
+lazy val Untyper = crossProject.crossType(CrossType.Pure)
+
+lazy val UntyperJVM = Untyper.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val UntyperJS = Untyper.js.addSbtFiles(file("../build.sbt.shared"))
+
 lazy val DelayMacros = crossProject.crossType(CrossType.Pure)
 
 lazy val DelayMacrosJVM = DelayMacros.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val DelayMacrosJS = DelayMacros.js.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val Override = crossProject.crossType(CrossType.Pure).dependsOn(DelayMacros, Constructor % Test, Mixin % Test)
+lazy val Override =
+  crossProject.crossType(CrossType.Pure).dependsOn(Untyper, DelayMacros, Constructor % Test, Mixin % Test)
 
 lazy val OverrideJVM = Override.jvm.addSbtFiles(file("../build.sbt.shared"))
 
