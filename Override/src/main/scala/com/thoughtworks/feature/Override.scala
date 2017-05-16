@@ -148,9 +148,9 @@ object Override {
           val methodName = memberSymbol.name.toTermName
           val methodType = memberSymbol.info
           val resultTypeTree = untyper(baseClass.asInstanceOf[Symbol]).untype(methodType.finalResultType)
-          val result = if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
+          val result = if (memberSymbol.isVar || memberSymbol.isSetter || memberSymbol.setter != NoSymbol) {
             q"override var $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
-          } else if (memberSymbol.isVal || memberSymbol.isStable) {
+          } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
             q"override val $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
           } else {
             val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
