@@ -101,7 +101,7 @@ object Override {
 
         val argumentHListName = TermName(c.freshName("argumentHList"))
 
-        def untyper(baseClass: Symbol) = new Untyper[c.universe.type](c.universe) {
+        final class OverrideUntyper(baseClass: Symbol) extends Untyper[c.universe.type](c.universe) {
           private def replaceThisValue: PartialFunction[Type, Tree] = {
             case tt @ ThisType(symbol) if symbol == baseClass =>
               This(mixinClassName)
@@ -140,7 +140,8 @@ object Override {
           val memberSymbol = member.asInstanceOf[Symbol].asMethod
           val methodName = memberSymbol.name.toTermName
           val methodType = memberSymbol.info
-          val resultTypeTree = untyper(baseClass.asInstanceOf[Symbol]).untype(methodType.finalResultType)
+          val untyper = new OverrideUntyper(baseClass)
+          val resultTypeTree = untyper.untype(methodType.finalResultType)
           val result = if (memberSymbol.isVar || memberSymbol.isSetter || memberSymbol.setter != NoSymbol) {
             q"override var $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
           } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
@@ -148,9 +149,9 @@ object Override {
           } else {
             val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
               if (argumentSymbol.asTerm.isImplicit) {
-                q"implicit val ${argumentSymbol.name.toTermName}: ${argumentSymbol.info}"
+                q"implicit val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
               } else {
-                q"val ${argumentSymbol.name.toTermName}: ${argumentSymbol.info}"
+                q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
               }
             })
             q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.shapeless.the.apply[$resultTypeTree]"
@@ -180,7 +181,8 @@ object Override {
                   if (lowerBound =:= definitions.AnyTpe) {
                     None
                   } else {
-                    Some(untyper(memberSymbol.owner).untype(lowerBound))
+                    val untyper = new OverrideUntyper(memberSymbol.owner)
+                    Some(untyper.untype(lowerBound))
                   }
                 })
                 val compoundTypeTree = CompoundTypeTree(Template(lowerBounds.toList, noSelfType, Nil))
