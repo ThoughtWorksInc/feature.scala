@@ -41,7 +41,7 @@ lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
-      inProjects(MixinJVM, ConstructorJVM, OverrideJVM, CallerJVM)
+      inProjects(UntyperJVM, MixinJVM, ConstructorJVM, OverrideJVM, CallerJVM)
     },
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
   )
