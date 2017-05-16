@@ -1,10 +1,12 @@
 package com.thoughtworks.feature
 
-import com.thoughtworks.feature.Override.{inject}
+import com.thoughtworks.feature.Override.inject
 import org.scalatest.{FreeSpec, Matchers}
 import shapeless._
 import shapeless.labelled.FieldType
 import shapeless.record.Record
+
+import scala.annotation.meta.getter
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -101,8 +103,8 @@ private object OverrideSpec {
     @inject
     val genericPair: Generic[(Int, String)]
 
-    @inject
-    def `genericPair should be a dependent type`: genericPair.Repr =:= (Int :: String :: HNil)
+    @(inject @getter)
+    val `genericPair should be a dependent type`: genericPair.Repr =:= (Int :: String :: HNil)
   }
 
 }
