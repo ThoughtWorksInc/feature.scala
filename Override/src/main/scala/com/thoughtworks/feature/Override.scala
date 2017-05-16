@@ -27,9 +27,6 @@ object Override {
 
   final class inject extends StaticAnnotation
 
-  // TODO: generate type definition according to annotation
-  final class lowerBound extends StaticAnnotation
-
   private[Override] final class PartiallyAppliedNewInstance[Result] extends Dynamic {
     def applyRecord[Vals](vals: Vals)(implicit cachedOverride: Override[Vals, Result]): Result = {
       cachedOverride.newInstanceRecord(vals)
