@@ -7,7 +7,7 @@ import scala.reflect.macros.blackbox
   *
   * == Usage ==
   * {{{
-  * libraryDependencies += "com.thoughtworks.constructor" %% "constructor" % "latest.release"
+  * libraryDependencies += "com.thoughtworks.feature" %% "constructor" % "latest.release"
   * }}}
   * {{{
   * trait A
