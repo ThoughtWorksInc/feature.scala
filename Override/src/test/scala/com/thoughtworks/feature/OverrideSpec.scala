@@ -46,6 +46,10 @@ final class OverrideSpec extends FreeSpec with Matchers {
       a.y should be(4.5f)
       a.z should be("z")
     }
+
+    "inject dependent type class" in {
+      "Override.newInstance[DependentInjection]()" should compile
+    }
   }
 }
 
@@ -91,7 +95,14 @@ private object OverrideSpec {
       val j = 2
     }
     type Local <: LocalApi
+  }
 
+  trait DependentInjection {
+    @inject
+    val genericPair: Generic[(Int, String)]
+
+    @inject
+    def `genericPair should be a dependent type`: genericPair.Repr =:= (Int :: String :: HNil)
   }
 
 }

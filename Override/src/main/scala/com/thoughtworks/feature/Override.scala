@@ -1,4 +1,5 @@
 package com.thoughtworks.feature
+import com.thoughtworks.Extractor._
 import com.thoughtworks.feature.DelayMacros.DelayTreeCreator
 import shapeless._
 
@@ -8,6 +9,7 @@ import scala.language.dynamics
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import scala.util.control.NonFatal
+import scala.language.existentials
 
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
@@ -24,6 +26,9 @@ final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extend
 object Override {
 
   final class inject extends StaticAnnotation
+
+  // TODO: generate type definition according to annotation
+  final class lowerBound extends StaticAnnotation
 
   private[Override] final class PartiallyAppliedNewInstance[Result] extends Dynamic {
     def applyRecord[Vals](vals: Vals)(implicit cachedOverride: Override[Vals, Result]): Result = {
@@ -94,54 +99,71 @@ object Override {
           case ((DealiasFieldType(k, v), temporaryName), accumulator) =>
             pq"_root_.shapeless.::($temporaryName, $accumulator)"
         }
-        val valuesType = mkHListTpe(for (DealiasFieldType(_, v) <- valTypes) yield v)
+        val superTypes: Stream[c.universe.Type] = demixin(mixinType)
+
+        val superTrees = for (superType <- superTypes) yield {
+          tq"$superType"
+        }
+        val mixinClassName = TypeName(c.freshName("Mixin"))
+
         val argumentHListName = TermName(c.freshName("argumentHList"))
 
+        def untyper(baseClass: Symbol) = new Untyper[c.universe.type](c.universe) {
+          private def replaceThisValue: PartialFunction[Type, Tree] = {
+            case tt @ ThisType(symbol) if symbol == baseClass =>
+              This(mixinClassName)
+          }
+          override def singletonValue: PartialFunction[Type, Tree] = {
+            replaceThisValue.orElse(super.singletonValue)
+          }
+          private def replaceTypeArguments: PartialFunction[Type, Tree] = {
+            def superUntype = super.untype;
+            {
+              case tpe @ TypeRef(NoPrefix, s, superUntype.extract.forall(typeArguments)) =>
+                TypeApply(
+                  super.untype(
+                    internal
+                      .typeRef(NoPrefix, s, Nil)
+                      .asSeenFrom(mixinType.asInstanceOf[Type], baseClass.asInstanceOf[Symbol])),
+                  typeArguments.toList
+                )
+            }
+          }
+
+          override def untype: PartialFunction[Type, Tree] = {
+            replaceTypeArguments.orElse(super.untype)
+          }
+        }
         val injects = for {
           baseClass <- mixinType.baseClasses.reverse
           member <- baseClass.info.decls
           if member.isMethod && {
-            c.internal.initialize(member)
+            internal.initialize(member.asInstanceOf[Symbol])
             member.annotations.exists { a =>
               a.tree.tpe <:< injectType
             }
           }
         } yield {
-          delayValOrDef(new DelayTreeCreator {
-            override def apply(c: whitebox.Context): c.universe.Tree =
-              try {
-                import c.universe._
-
-                val memberSymbol = member.asInstanceOf[Symbol].asMethod
-                val methodName = memberSymbol.name.toTermName
-
-//                def  narrowSuperType = internal.superType(internal.thisType(c.internal.enclosingOwner),
-//                                                         internal.thisType(memberSymbol.owner))
-//
-//                val methodType = memberSymbol.infoIn(narrowSuperType) // TODO: need Type To Tree conversion for better this.type
-                val methodType = memberSymbol.info
-                val result = if (memberSymbol.isVar) {
-                  q"override var $methodName = _root_.scala.Predef.implicitly"
-                } else if (memberSymbol.isVal) {
-                  q"override val $methodName = _root_.scala.Predef.implicitly"
-                } else {
-                  val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
-                    if (argumentSymbol.asTerm.isImplicit) {
-                      q"implicit val ${argumentSymbol.name.toTermName}: ${argumentSymbol.info}"
-                    } else {
-                      q"val ${argumentSymbol.name.toTermName}: ${argumentSymbol.info}"
-                    }
-                  })
-                  q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.scala.Predef.implicitly"
-                }
-//                c.info(c.enclosingPosition, show(result), true)
-                result
-              } catch {
-                case NonFatal(e) =>
-                  e.printStackTrace()
-                  throw e
+          val memberSymbol = member.asInstanceOf[Symbol].asMethod
+          val methodName = memberSymbol.name.toTermName
+          val methodType = memberSymbol.info
+          val resultTypeTree = untyper(baseClass.asInstanceOf[Symbol]).untype(methodType.finalResultType)
+          val result = if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
+            q"override var $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
+          } else if (memberSymbol.isVal || memberSymbol.isStable) {
+            q"override val $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
+          } else {
+            val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
+              if (argumentSymbol.asTerm.isImplicit) {
+                q"implicit val ${argumentSymbol.name.toTermName}: ${argumentSymbol.info}"
+              } else {
+                q"val ${argumentSymbol.name.toTermName}: ${argumentSymbol.info}"
               }
-          })
+            })
+            q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.shapeless.the.apply[$resultTypeTree]"
+          }
+//          c.info(c.enclosingPosition, show(result), true)
+          result
         }
         val overridenTypes =
           (for {
@@ -152,7 +174,7 @@ object Override {
             .groupBy(_.name.toString)
             .withFilter {
               _._2.forall {
-                _.info match {
+                _.info.asInstanceOf[Type] match {
                   case TypeBounds(_, _) => true
                   case _ => false
                 }
@@ -160,47 +182,30 @@ object Override {
             }
             .map {
               case (name, members) =>
-                delayType(new DelayTreeCreator {
-                  override def apply(c: whitebox.Context): c.universe.Tree =
-                    try {
-                      import c.universe._
-
-                      val lowerBounds = members.collect(scala.Function.unlift { member =>
-                        val memberSymbol = member.asInstanceOf[Symbol]
-                        val narrowSuperType = internal.superType(internal.thisType(c.internal.enclosingOwner),
-                                                                 internal.thisType(memberSymbol.owner))
-                        val TypeBounds(_, lowerBound) = memberSymbol.infoIn(narrowSuperType)
-                        if (lowerBound =:= definitions.AnyTpe) {
-                          None
-                        } else {
-                          Some(tq"$lowerBound")
-                        }
-                      })
-                      val compoundTypeTree = CompoundTypeTree(Template(lowerBounds.toList, noSelfType, Nil))
-                      val result = q"override type ${TypeName(name)} = $compoundTypeTree"
-//                      c.info(c.enclosingPosition, show(result), true)
-                      result
-                    } catch {
-                      case NonFatal(e) =>
-                        e.printStackTrace()
-                        throw e
-                    }
+                val lowerBounds = members.collect(scala.Function.unlift { member =>
+                  val memberSymbol = member
+                  val TypeBounds(_, lowerBound) = memberSymbol.info
+                  if (lowerBound =:= definitions.AnyTpe) {
+                    None
+                  } else {
+                    Some(untyper(memberSymbol.owner).untype(lowerBound))
+                  }
                 })
+                val compoundTypeTree = CompoundTypeTree(Template(lowerBounds.toList, noSelfType, Nil))
+                val result = q"override type ${TypeName(name)} = $compoundTypeTree"
+//                c.info(c.enclosingPosition, show(result), true)
+                result
             }
-        val superTypes: Stream[c.universe.Type] = demixin(mixinType)
-
-        val superTrees = for (superType <- superTypes) yield {
-          tq"$superType"
-        }
         val result = q"""
-        new _root_.com.thoughtworks.feature.Override[$valsType, $mixinType]((_: $valuesType) match { case $pattern =>
-          new ..$superTrees {
-            ..$upvalues
-            ..$overridenTypes
-            ..$injects
-          }
-        })
-      """
+          new _root_.com.thoughtworks.feature.Override[$valsType, $mixinType]({ case $pattern =>
+            final class $mixinClassName extends ..$superTrees {
+              ..$upvalues
+              ..$overridenTypes
+              ..$injects
+            }
+            new $mixinClassName
+          })
+        """
 //        c.info(c.enclosingPosition, showCode(result), false)
         result
       } catch {

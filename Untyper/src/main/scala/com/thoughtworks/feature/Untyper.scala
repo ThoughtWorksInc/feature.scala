@@ -6,14 +6,14 @@ import com.thoughtworks.Extractor._
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-class Untyper[Universe <: scala.reflect.api.Universe](val universe: Universe) {
+class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val universe: Universe) {
   import universe._
 
   /** Returns the instance tree for given singleton type */
   def singletonValue: PartialFunction[Type, Tree] = {
     case ThisType(symbol) => q"$symbol.this"
     case SingleType(NoPrefix, sym) => q"${sym.name.toTermName}"
-    case SingleType(singletonValue.extract(pre), sym) => q"$pre.${sym.name.toTermName}"
+    case SingleType(singletonValue.extract(pre), sym) => q"$pre.$sym"
     case SuperType(singletonValue.extract(thisValue), ThisType(superSymbol)) =>
       Super(thisValue, superSymbol.name.toTypeName)
   }
@@ -90,7 +90,7 @@ class Untyper[Universe <: scala.reflect.api.Universe](val universe: Universe) {
     case TypeRef(NoPrefix, sym, args) =>
       tq"${sym.name.toTypeName}[..${args.map(untype)}]"
     case TypeRef(singletonValue.extract(pre), sym, args) =>
-      tq"$pre.${sym.name.toTypeName}[..${args.map(untype)}]"
+      tq"$pre.$sym[..${args.map(untype)}]"
     case RefinedType(untype.extract.forall(parents), decls) =>
       CompoundTypeTree(Template(parents.toList, noSelfType, decls.view.map(definition).toList))
     case PolyType(typeSymbol.extract.forall(typeDefinition.extract.forall(typeParams)), untype.extract(resultType)) =>
