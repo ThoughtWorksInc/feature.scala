@@ -175,8 +175,7 @@ object Override {
             }
             .map {
               case (name, members) =>
-                val lowerBounds = members.collect(scala.Function.unlift { member =>
-                  val memberSymbol = member
+                val lowerBounds = members.collect(scala.Function.unlift[Symbol, Tree] { memberSymbol =>
                   val TypeBounds(_, lowerBound) = memberSymbol.info
                   if (lowerBound =:= definitions.AnyTpe) {
                     None

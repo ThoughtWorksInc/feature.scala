@@ -11,9 +11,14 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
 
   /** Returns the instance tree for given singleton type */
   def singletonValue: PartialFunction[Type, Tree] = {
-    case ThisType(symbol) => q"$symbol.this"
-    case SingleType(NoPrefix, sym) => q"${sym.name.toTermName}"
-    case SingleType(singletonValue.extract(pre), sym) => q"$pre.$sym"
+    case ThisType(symbol) =>
+      q"$symbol.this"
+    case SingleType(NoPrefix, sym) =>
+      q"${sym.name.toTermName}"
+    case SingleType(pre, sym) if pre.typeSymbol.isPackage =>
+      q"$sym"
+    case SingleType(singletonValue.extract(pre), sym) =>
+      q"$pre.$sym"
     case SuperType(singletonValue.extract(thisValue), ThisType(superSymbol)) =>
       Super(thisValue, superSymbol.name.toTypeName)
   }
@@ -89,6 +94,8 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
       tq"$value.type"
     case TypeRef(NoPrefix, sym, args) =>
       tq"${sym.name.toTypeName}[..${args.map(untype)}]"
+    case TypeRef(pre, sym, args) if pre.typeSymbol.isPackage =>
+      tq"$sym[..${args.map(untype)}]"
     case TypeRef(singletonValue.extract(pre), sym, args) =>
       tq"$pre.$sym[..${args.map(untype)}]"
     case RefinedType(untype.extract.forall(parents), decls) =>
