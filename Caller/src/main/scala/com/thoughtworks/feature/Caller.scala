@@ -5,7 +5,6 @@ import scala.reflect.macros.whitebox.Context
 
 /** An implicit value that points to the function caller.
   * 
-  * @example
   * {{{
   * libraryDependencies += "com.thoughtworks.feature" %% "caller" % "latest.release"
   * }}}
