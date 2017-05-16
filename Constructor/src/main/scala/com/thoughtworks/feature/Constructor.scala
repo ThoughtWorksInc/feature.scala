@@ -43,7 +43,7 @@ import scala.reflect.macros.blackbox
   * 
   *   private[Ast] abstract class BinaryOperator(leftHandSide: Ast, rightHandSide: Ast) extends Ast {
   *     protected def symbol: String
-  *     override final def compile() = s"($$leftHandSide $$symbol $$rightHandSide)"
+  *     override final def compile() = s"(\$leftHandSide \$symbol \$rightHandSide)"
   *   }
   * 
   *   def binaryOperator[T](leftHandSide: Ast, rightHandSide: Ast)(
