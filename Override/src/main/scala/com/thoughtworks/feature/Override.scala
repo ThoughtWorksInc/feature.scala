@@ -1,5 +1,6 @@
 package com.thoughtworks.feature
 import com.thoughtworks.Extractor._
+import shapeless.PolyDefns.~>
 import shapeless._
 
 import scala.annotation.StaticAnnotation
@@ -13,21 +14,27 @@ import scala.language.existentials
 /**
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-final class Override[Vals, Result](val newInstanceRecord: Vals => Result) extends AnyVal with Dynamic {
+abstract class Override[Vals, Super] extends Dynamic {
   def applyDynamic(method: String)(): Any = macro RecordMacros.forwardImpl
 
   /**
-    * @usecase def newInstance(vals: Any*): Result = ???
+    * @usecase def newInstance(vals: Any*): Super = ???
     */
   def applyDynamicNamed(method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
+
+  type Out <: Super
+  val newInstanceRecord: Vals => Out
 }
 
 object Override {
+  type Aux[Vals, Super, Out0] = Override[Vals, Super] {
+    type Out = Out0
+  }
 
   final class inject extends StaticAnnotation
 
-  private[Override] final class PartiallyAppliedNewInstance[Result] extends Dynamic {
-    def applyRecord[Vals](vals: Vals)(implicit cachedOverride: Override[Vals, Result]): Result = {
+  private[Override] final class PartiallyAppliedNewInstance[Super] extends Dynamic {
+    def applyRecord[Vals, Out <: Super](vals: Vals)(implicit cachedOverride: Override.Aux[Vals, Super, Out]): Out = {
       cachedOverride.newInstanceRecord(vals)
     }
 
@@ -36,13 +43,14 @@ object Override {
     def applyDynamicNamed[Issues10307Workaround](method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
   }
 
-  /** @usecase def newInstance[Result](vals: Any*): Result = ???
+  /** @usecase def newInstance[Super](vals: Any*): Super = ???
     */
-  def newInstance[Result]: PartiallyAppliedNewInstance[Result] = new PartiallyAppliedNewInstance[Result]
+  def newInstance[Super]: PartiallyAppliedNewInstance[Super] = new PartiallyAppliedNewInstance[Super]
 
-  def apply[Vals, Result](implicit `override`: Override[Vals, Result]): Override[Vals, Result] = `override`
+  def apply[Vals, Super](implicit `override`: Override[Vals, Super]): Override.Aux[Vals, Super, `override`.Out] =
+    `override`
 
-  implicit def materialize[Vals, Result]: Override[Vals, Result] = macro Macros.materialize[Vals, Result]
+  implicit def materialize[Vals, Super]: Override[Vals, Super] = macro Macros.materialize[Vals, Super]
 
   private[Override] final class Macros(val c: whitebox.Context) extends CaseClassMacros with SingletonTypeUtils {
     import c.universe._
@@ -57,9 +65,9 @@ object Override {
       }
     }
 
-    def materialize[Vals: WeakTypeTag, Result: WeakTypeTag]: Tree =
+    def materialize[Vals: WeakTypeTag, Super: WeakTypeTag]: Tree =
       try {
-        val mixinType = weakTypeOf[Result]
+        val mixinType = weakTypeOf[Super]
         val valsType = weakTypeOf[Vals]
         val valTypes = unpackHListTpe(valsType)
         object DealiasFieldType {
@@ -191,14 +199,21 @@ object Override {
                 result
             }
         val result = q"""
-          new _root_.com.thoughtworks.feature.Override[$valsType, $mixinType]({ case $pattern =>
-            final class $mixinClassName extends ..$superTrees {
-              ..$upvalues
-              ..$overridenTypes
-              ..$injects
+          @_root_.scala.inline def fromFunction[Out0 <: $mixinType](f: $valsType => Out0): Override.Aux[$valsType, $mixinType, Out0] = new Override[$valsType, $mixinType] {
+            type Out = Out0
+            @_root_.scala.inline override val newInstanceRecord = f
+          }
+          val f = { (_: $valsType) match {
+            case $pattern =>
+              final class $mixinClassName extends ..$superTrees {
+                ..$upvalues
+                ..$overridenTypes
+                ..$injects
+              }
+              new $mixinClassName
             }
-            new $mixinClassName
-          })
+          }
+          fromFunction(f)
         """
 //        c.info(c.enclosingPosition, showCode(result), false)
         result

@@ -35,7 +35,7 @@ final class OverrideSpec extends FreeSpec with Matchers {
 
     "create the implementation for @inject method with an abstract return type from implicit values" in {
       val o = Override[HNil, Global0 with Global1 with HasLocal]
-      val g = o.newInstance()
+      val g: Global0 with Global1 with HasLocal = o.newInstance()
       val l = g.local
       val local = l.newInstance()
       (local: Global0#Local).i should be(1)
@@ -50,7 +50,8 @@ final class OverrideSpec extends FreeSpec with Matchers {
     }
 
     "inject dependent type class" in {
-      "Override.newInstance[DependentInjection]()" should compile
+      val di = Override.newInstance[DependentInjection]()
+      "implicitly[di.genericPair.Repr =:= (Int :: String :: HNil)]" should compile
     }
   }
 }

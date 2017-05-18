@@ -1,5 +1,7 @@
 libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.value % Provided
 
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+
 libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.1" % Test
 
 libraryDependencies += "com.chuusai" %%% "shapeless" % "2.3.2"
