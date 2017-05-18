@@ -13,10 +13,12 @@ object Demixin {
     type Out = Out0
   }
 
-  def apply[ConjunctionType](implicit demixin: Demixin[ConjunctionType]): Demixin.Aux[ConjunctionType, demixin.Out] =
+  def apply[ConjunctionType](implicit demixin: Demixin[ConjunctionType])
+    : Demixin.Aux[ConjunctionType, demixin.Out] =
     demixin
 
-  implicit def materialize[ConjunctionType]: Demixin[ConjunctionType] = macro Macros.materialize[ConjunctionType]
+  implicit def materialize[ConjunctionType]: Demixin[ConjunctionType] =
+    macro Macros.materialize[ConjunctionType]
 
   final class Macros(val c: whitebox.Context) extends CaseClassMacros {
     import c.universe._
@@ -25,6 +27,8 @@ object Demixin {
       t.dealias match {
         case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
           superTypes.toStream.flatMap(demixin)
+        case any if definitions.AnyTpe <:< any =>
+          Stream.empty[Type]
         case notRefinedType =>
           Stream(notRefinedType)
       }
@@ -33,11 +37,13 @@ object Demixin {
     def materialize[ConjunctionType: WeakTypeTag]: Tree = {
       val conjunctionType = weakTypeOf[ConjunctionType]
       val out = mkHListTpe(demixin(conjunctionType).toList)
-      q"""
+      val result = q"""
         new _root_.com.thoughtworks.feature.Demixin[$conjunctionType] {
           type Out = $out
         } : _root_.com.thoughtworks.feature.Demixin.Aux[$conjunctionType, $out]
       """
+//      c.info(c.enclosingPosition, showCode(result), true)
+      result
     }
   }
 

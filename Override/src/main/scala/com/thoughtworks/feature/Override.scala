@@ -20,7 +20,8 @@ abstract class Override[Vals, Super] extends Dynamic {
   /**
     * @usecase def newInstance(vals: Any*): Super = ???
     */
-  def applyDynamicNamed(method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
+  def applyDynamicNamed(method: String)(rec: Any*): Any =
+    macro RecordMacros.forwardNamedImpl
 
   type Out <: Super
   val newInstanceRecord: Vals => Out
@@ -33,26 +34,35 @@ object Override {
 
   final class inject extends StaticAnnotation
 
-  private[Override] final class PartiallyAppliedNewInstance[Super] extends Dynamic {
-    def applyRecord[Vals, Out <: Super](vals: Vals)(implicit cachedOverride: Override.Aux[Vals, Super, Out]): Out = {
+  private[Override] final class PartiallyAppliedNewInstance[Super]
+      extends Dynamic {
+    def applyRecord[Vals, Out <: Super](vals: Vals)(
+        implicit cachedOverride: Override.Aux[Vals, Super, Out]): Out = {
       cachedOverride.newInstanceRecord(vals)
     }
 
-    def applyDynamic[Issues10307Workaround](method: String)(): Any = macro RecordMacros.forwardImpl
+    def applyDynamic[Issues10307Workaround](method: String)(): Any =
+      macro RecordMacros.forwardImpl
 
-    def applyDynamicNamed[Issues10307Workaround](method: String)(rec: Any*): Any = macro RecordMacros.forwardNamedImpl
+    def applyDynamicNamed[Issues10307Workaround](method: String)(
+        rec: Any*): Any = macro RecordMacros.forwardNamedImpl
   }
 
   /** @usecase def newInstance[Super](vals: Any*): Super = ???
     */
-  def newInstance[Super]: PartiallyAppliedNewInstance[Super] = new PartiallyAppliedNewInstance[Super]
+  def newInstance[Super]: PartiallyAppliedNewInstance[Super] =
+    new PartiallyAppliedNewInstance[Super]
 
-  def apply[Vals, Super](implicit `override`: Override[Vals, Super]): Override.Aux[Vals, Super, `override`.Out] =
+  def apply[Vals, Super](implicit `override`: Override[Vals, Super])
+    : Override.Aux[Vals, Super, `override`.Out] =
     `override`
 
-  implicit def materialize[Vals, Super]: Override[Vals, Super] = macro Macros.materialize[Vals, Super]
+  implicit def materialize[Vals, Super]: Override[Vals, Super] =
+    macro Macros.materialize[Vals, Super]
 
-  private[Override] final class Macros(val c: whitebox.Context) extends CaseClassMacros with SingletonTypeUtils {
+  private[Override] final class Macros(val c: whitebox.Context)
+      extends CaseClassMacros
+      with SingletonTypeUtils {
     import c.universe._
 
     private val injectType = typeOf[inject]
@@ -81,25 +91,29 @@ object Override {
             case _ => None
           }
         }
-        val (temporaryNames, upvalues) = (for (DealiasFieldType(k, v) <- valTypes) yield {
-          val overridingName = TermName(k)
-          val setters = for {
-            alternative <- mixinType.member(overridingName).alternatives
-            setter = alternative.asMethod.setter
-            if setter != NoSymbol
-          } yield setter
-          val temporaryName = TermName(c.freshName())
-          val upvalue = if (setters.isEmpty || setters.exists(!_.isAbstract)) {
-            q"override val $overridingName: $v = $temporaryName"
-          } else {
-            q"override var $overridingName: $v = $temporaryName"
+        val (temporaryNames, upvalues) =
+          (for (DealiasFieldType(k, v) <- valTypes) yield {
+            val overridingName = TermName(k)
+            val setters = for {
+              alternative <- mixinType.member(overridingName).alternatives
+              setter = alternative.asMethod.setter
+              if setter != NoSymbol
+            } yield setter
+            val temporaryName = TermName(c.freshName())
+            val upvalue =
+              if (setters.isEmpty || setters.exists(!_.isAbstract)) {
+                q"override val $overridingName: $v = $temporaryName"
+              } else {
+                q"override var $overridingName: $v = $temporaryName"
+              }
+            (temporaryName, upvalue)
+          }).unzip
+        val pattern = valTypes.view
+          .zip(temporaryNames)
+          .foldRight[Tree](pq"_root_.shapeless.HNil") {
+            case ((DealiasFieldType(k, v), temporaryName), accumulator) =>
+              pq"_root_.shapeless.::($temporaryName, $accumulator)"
           }
-          (temporaryName, upvalue)
-        }).unzip
-        val pattern = valTypes.view.zip(temporaryNames).foldRight[Tree](pq"_root_.shapeless.HNil") {
-          case ((DealiasFieldType(k, v), temporaryName), accumulator) =>
-            pq"_root_.shapeless.::($temporaryName, $accumulator)"
-        }
         val superTypes: Stream[c.universe.Type] = demixin(mixinType)
 
         val superTrees = for (superType <- superTypes) yield {
@@ -109,7 +123,8 @@ object Override {
 
         val argumentHListName = TermName(c.freshName("argumentHList"))
 
-        final class OverrideUntyper(baseClass: Symbol) extends Untyper[c.universe.type](c.universe) {
+        final class OverrideUntyper(baseClass: Symbol)
+            extends Untyper[c.universe.type](c.universe) {
           private def replaceThisValue: PartialFunction[Type, Tree] = {
             case tt @ ThisType(symbol) if symbol == baseClass =>
               This(mixinClassName)
@@ -120,7 +135,9 @@ object Override {
           private def replaceTypeArguments: PartialFunction[Type, Tree] = {
             def superUntype = super.untype;
             {
-              case tpe @ TypeRef(NoPrefix, s, superUntype.extract.forall(typeArguments)) =>
+              case tpe @ TypeRef(NoPrefix,
+                                 s,
+                                 superUntype.extract.forall(typeArguments)) =>
                 TypeApply(
                   super.untype(
                     internal
@@ -138,32 +155,35 @@ object Override {
         val injects = for {
           baseClass <- mixinType.baseClasses.reverse
           member <- baseClass.info.decls
-          if member.isMethod && {
+          if member.isTerm && {
             internal.initialize(member)
             member.annotations.exists { a =>
               a.tree.tpe <:< injectType
             }
           }
         } yield {
-          val memberSymbol = member.asMethod
+          val memberSymbol = member.asTerm
           val methodName = memberSymbol.name.toTermName
           val methodType = memberSymbol.info
           val untyper = new OverrideUntyper(baseClass)
           val resultTypeTree = untyper.untype(methodType.finalResultType)
-          val result = if (memberSymbol.isVar || memberSymbol.isSetter || memberSymbol.setter != NoSymbol) {
-            q"override var $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
-          } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
-            q"override val $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
-          } else {
-            val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
-              if (argumentSymbol.asTerm.isImplicit) {
-                q"implicit val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
-              } else {
-                q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
-              }
-            })
-            q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.shapeless.the.apply[$resultTypeTree]"
-          }
+          val result =
+            if (memberSymbol.isVar || memberSymbol.isSetter || memberSymbol.setter != NoSymbol) {
+              q"override var $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
+            } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
+              q"override val $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
+            } else {
+              val argumentTrees = methodType.paramLists.map(_.map {
+                argumentSymbol =>
+                  if (argumentSymbol.asTerm.isImplicit) {
+                    q"implicit val ${argumentSymbol.name.toTermName}: ${untyper
+                      .untype(argumentSymbol.info)}"
+                  } else {
+                    q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
+                  }
+              })
+              q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.shapeless.the.apply[$resultTypeTree]"
+            }
 //          c.info(c.enclosingPosition, show(result), true)
           result
         }
@@ -182,25 +202,26 @@ object Override {
                 }
               }
             }
-            .flatMap {
+            .map {
               case (name, members) =>
-                val lowerBounds = members.collect(scala.Function.unlift[Symbol, Tree] { memberSymbol =>
-                  val TypeBounds(_, lowerBound) = memberSymbol.info
-                  if (lowerBound =:= definitions.AnyTpe) {
-                    None
-                  } else {
-                    val untyper = new OverrideUntyper(memberSymbol.owner)
-                    Some(untyper.untype(lowerBound))
-                  }
-                })
-                if (lowerBounds.isEmpty) {
-                  Nil
+                val lowerBounds = members.collect(
+                  scala.Function.unlift[Symbol, Tree] { memberSymbol =>
+                    val TypeBounds(_, lowerBound) = memberSymbol.info
+                    if (lowerBound =:= definitions.AnyTpe) {
+                      None
+                    } else {
+                      val untyper = new OverrideUntyper(memberSymbol.owner)
+                      Some(untyper.untype(lowerBound))
+                    }
+                  })
+                val typeTree = if (lowerBounds.isEmpty) {
+                  TypeTree(definitions.AnyTpe)
                 } else {
-                  val compoundTypeTree = CompoundTypeTree(Template(lowerBounds, noSelfType, Nil))
-                  val result = q"override type ${TypeName(name)} = $compoundTypeTree"
-                  //                c.info(c.enclosingPosition, show(result), true)
-                  List(result)
+                  CompoundTypeTree(Template(lowerBounds, noSelfType, Nil))
                 }
+                val result = q"override type ${TypeName(name)} = $typeTree"
+                //                c.info(c.enclosingPosition, show(result), true)
+                result
             }
         val result = q"""
           @_root_.scala.inline def fromFunction[Out0 <: $mixinType](f: $valsType => Out0): Override.Aux[$valsType, $mixinType, Out0] = new Override[$valsType, $mixinType] {
@@ -219,7 +240,7 @@ object Override {
           }
           fromFunction(f)
         """
-//        c.info(c.enclosingPosition, showCode(result), false)
+//        c.info(c.enclosingPosition, showCode(result), true)
         result
       } catch {
         case NonFatal(e) =>
