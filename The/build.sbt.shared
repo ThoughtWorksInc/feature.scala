@@ -1,0 +1,9 @@
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.1" % Test
+
+scalaOrganization in updateSbtClassifiers := (scalaOrganization in Global).value
+
+scalaOrganization := "org.typelevel"
+
+scalacOptions in Compile += "-Yliteral-types"
+
+scalaVersion += "-bin-typelevel-4"

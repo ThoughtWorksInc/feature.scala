@@ -28,6 +28,12 @@ lazy val DemixinJVM = Demixin.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val DemixinJS = Demixin.js.addSbtFiles(file("../build.sbt.shared"))
 
+lazy val The = crossProject.crossType(CrossType.Pure)
+
+lazy val TheJVM = The.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val TheJS = The.js.addSbtFiles(file("../build.sbt.shared"))
+
 lazy val SyntacticTypeTree = crossProject.crossType(CrossType.Pure)
 
 lazy val Untyper = crossProject.crossType(CrossType.Pure)
@@ -49,5 +55,5 @@ lazy val unidoc = project
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
       inProjects(UntyperJVM, MixinJVM, DemixinJVM, ConstructorJVM, OverrideJVM, CallerJVM)
     },
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
   )
