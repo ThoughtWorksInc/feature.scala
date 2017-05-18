@@ -1,0 +1,7 @@
+libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+
+libraryDependencies += "com.chuusai" %%% "shapeless" % "2.3.2"
+
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.1" % Test
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
