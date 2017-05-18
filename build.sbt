@@ -4,9 +4,9 @@ organization in ThisBuild := "com.thoughtworks.feature"
 
 crossScalaVersions in ThisBuild := Seq("2.11.11-bin-typelevel-4", "2.12.2-bin-typelevel-4")
 
-scalaOrganization in updateSbtClassifiers in ThisBuild := "org.scala-lang"
+scalaOrganization in updateSbtClassifiers in ThisBuild := (scalaOrganization in Global).value
 
-scalaOrganization in Global := "org.typelevel"
+scalaOrganization in ThisBuild := "org.typelevel"
 
 lazy val Caller = crossProject.crossType(CrossType.Pure)
 
