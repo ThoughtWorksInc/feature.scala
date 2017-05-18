@@ -21,52 +21,52 @@ import scala.reflect.macros.blackbox
   * }}}
 
   * == Motivation ==
-  * 
+  *
   * This feature is useful for library authors.
   * A library author may ask his user to create a `trait` type, then dynamically mix-in it with the features provided by the library.
-  * 
+  *
   * Suppose you are creating a [[https://martinfowler.com/bliki/DomainSpecificLanguage.html DSL]] that compiles to JavaScript.
-  * 
+  *
   * You want your DSL is extensible.
   * For example, the DSL users should be able to create custom binary operators.
-  * 
+  *
   * With the help of `Constructor.scala`, you can put the boilerplate code into a private class `BinaryOperator`:
-  * 
+  *
   * {{{
   * trait Ast
-  * 
+  *
   * object Ast {
-  * 
+  *
   *   class Literal(val n: Int) extends Ast {
   *     override final def compile(): String = n.compile()
   *   }
-  * 
+  *
   *   private[Ast] abstract class BinaryOperator(leftHandSide: Ast, rightHandSide: Ast) extends Ast {
   *     protected def symbol: String
   *     override final def compile() = s"(\$leftHandSide \$symbol \$rightHandSide)"
   *   }
-  * 
+  *
   *   def binaryOperator[T](leftHandSide: Ast, rightHandSide: Ast)(
   *     implicit constructor: Constructor[(Ast, Ast) => BinaryOperator with T]): BinaryOperator with T = {
   *     constructor.newInstance(leftHandSide, rightHandSide)
   *   }
-  * 
+  *
   * }
   * }}}
-  * 
+  *
   * The users of only need a very simple implementation for their custom binary operators.
-  * 
+  *
   * {{{
   * import Ast._
-  * 
+  *
   * trait Plus {
   *   protected final def symbol = "+"
   * }
-  * 
+  *
   * trait Minus {
   *   protected final def symbol = "-"
   * }
-  * 
+  *
   * val myAst = binaryOperator[Plus](
   *   new Literal(1),
   *   binaryOperator[Minus](
@@ -74,18 +74,18 @@ import scala.reflect.macros.blackbox
   *     new Literal(5)
   *   )
   * )
-  * 
+  *
   * print(myAst.compile()) // Output: "(1 + (3 - 5))"
   * }}}
-  * 
+  *
   * == An alternative approach ==
-  * 
+  *
   * There is another approach to integrate partial implementation from users: asking users to provide custom callback functions or type classes.
-  * 
+  *
   * However, the callback functions or type classes approach will create additional object instances and additional references for each instance at run-time.
   * On the other hand, the `Constructor.scala` approach create classes at compile-time and no additional run-time references.
   * As a result, at run-time, `Constructor.scala` approach will consume less memory, and performs less indirect access on memory.
-  * 
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 final class Constructor[F](val newInstance: F) extends AnyVal
