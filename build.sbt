@@ -2,11 +2,11 @@ publishArtifact := false
 
 organization in ThisBuild := "com.thoughtworks.feature"
 
-crossScalaVersions in ThisBuild := Seq("2.11.11-bin-typelevel-4", "2.12.2-bin-typelevel-4")
+crossScalaVersions in Global := Seq("2.11.11-bin-typelevel-4", "2.12.2-bin-typelevel-4")
 
-scalaOrganization in updateSbtClassifiers in ThisBuild := (scalaOrganization in Global).value
+scalaOrganization in updateSbtClassifiers in ThisBuild := "org.scala-lang"
 
-scalaOrganization in ThisBuild := "org.typelevel"
+scalaOrganization in Global := "org.typelevel"
 
 lazy val Caller = crossProject.crossType(CrossType.Pure)
 
@@ -58,6 +58,5 @@ lazy val unidoc = project
   .settings(
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
       inProjects(UntyperJVM, MixinJVM, DemixinJVM, ConstructorJVM, OverrideJVM, CallerJVM)
-    },
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
+    }
   )
