@@ -182,7 +182,7 @@ object Override {
                 }
               }
             }
-            .map {
+            .flatMap {
               case (name, members) =>
                 val lowerBounds = members.collect(scala.Function.unlift[Symbol, Tree] { memberSymbol =>
                   val TypeBounds(_, lowerBound) = memberSymbol.info
@@ -193,10 +193,14 @@ object Override {
                     Some(untyper.untype(lowerBound))
                   }
                 })
-                val compoundTypeTree = CompoundTypeTree(Template(lowerBounds.toList, noSelfType, Nil))
-                val result = q"override type ${TypeName(name)} = $compoundTypeTree"
-//                c.info(c.enclosingPosition, show(result), true)
-                result
+                if (lowerBounds.isEmpty) {
+                  Nil
+                } else {
+                  val compoundTypeTree = CompoundTypeTree(Template(lowerBounds, noSelfType, Nil))
+                  val result = q"override type ${TypeName(name)} = $compoundTypeTree"
+                  //                c.info(c.enclosingPosition, show(result), true)
+                  List(result)
+                }
             }
         val result = q"""
           @_root_.scala.inline def fromFunction[Out0 <: $mixinType](f: $valsType => Out0): Override.Aux[$valsType, $mixinType, Out0] = new Override[$valsType, $mixinType] {
