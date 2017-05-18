@@ -3,7 +3,7 @@ package com.thoughtworks.feature
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-/** An implicit value to dynamically creating classes and traits, especially dynamic mixins.
+/** An implicit value for dynamically creating classes and traits, especially dynamic mixins.
   *
   * == Usage ==
   * {{{
