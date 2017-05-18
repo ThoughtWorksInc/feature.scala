@@ -125,7 +125,7 @@ object Override {
                   super.untype(
                     internal
                       .typeRef(NoPrefix, s, Nil)
-                      .asSeenFrom(mixinType.asInstanceOf[Type], baseClass.asInstanceOf[Symbol])),
+                      .asSeenFrom(mixinType, baseClass)),
                   typeArguments.toList
                 )
             }
@@ -139,13 +139,13 @@ object Override {
           baseClass <- mixinType.baseClasses.reverse
           member <- baseClass.info.decls
           if member.isMethod && {
-            internal.initialize(member.asInstanceOf[Symbol])
+            internal.initialize(member)
             member.annotations.exists { a =>
               a.tree.tpe <:< injectType
             }
           }
         } yield {
-          val memberSymbol = member.asInstanceOf[Symbol].asMethod
+          val memberSymbol = member.asMethod
           val methodName = memberSymbol.name.toTermName
           val methodType = memberSymbol.info
           val untyper = new OverrideUntyper(baseClass)
@@ -176,7 +176,7 @@ object Override {
             .groupBy(_.name.toString)
             .withFilter {
               _._2.forall {
-                _.info.asInstanceOf[Type] match {
+                _.info match {
                   case TypeBounds(_, _) => true
                   case _ => false
                 }
