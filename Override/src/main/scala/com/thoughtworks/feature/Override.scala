@@ -110,7 +110,7 @@ object Override {
           }
         val superTypes: Stream[c.universe.Type] = demixin(mixinType)
 
-        val superTrees = for (superType <- superTypes) yield {
+        val superTrees = for (superType <- superTypes.distinct) yield {
           tq"$superType"
         }
         val mixinClassName = TypeName(c.freshName("Mixin"))
