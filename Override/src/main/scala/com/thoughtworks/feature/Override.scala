@@ -129,13 +129,9 @@ object Override {
             def superUntype = super.untype;
             {
               case tpe @ TypeRef(NoPrefix, s, superUntype.extract.forall(typeArguments)) =>
-                TypeApply(
-                  super.untype(
-                    internal
-                      .typeRef(NoPrefix, s, Nil)
-                      .asSeenFrom(mixinType, baseClass)),
-                  typeArguments.toList
-                )
+                tq"${super.untype(internal
+                  .typeRef(NoPrefix, s, Nil)
+                  .asSeenFrom(mixinType, baseClass))}[..${typeArguments}]"
             }
           }
 
