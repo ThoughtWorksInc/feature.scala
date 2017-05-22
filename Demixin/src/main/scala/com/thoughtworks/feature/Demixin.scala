@@ -36,7 +36,7 @@ object Demixin {
 
     def materialize[ConjunctionType: WeakTypeTag]: Tree = {
       val conjunctionType = weakTypeOf[ConjunctionType]
-      val out = mkHListTpe(demixin(conjunctionType).toList)
+      val out = mkHListTpe(demixin(conjunctionType).distinct.toList)
       val result = q"""
         new _root_.com.thoughtworks.feature.Demixin[$conjunctionType] {
           type Out = $out
