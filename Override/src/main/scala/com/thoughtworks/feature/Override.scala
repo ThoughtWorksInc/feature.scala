@@ -35,8 +35,8 @@ object Override {
   final class inject extends StaticAnnotation
 
   private[Override] final class PartiallyAppliedNewInstance[Super] extends Dynamic {
-    def applyRecord[Vals, Out <: Super](vals: Vals)(implicit cachedOverride: Override.Aux[Vals, Super, Out]): Out = {
-      cachedOverride.newInstanceRecord(vals)
+    def applyRecord[Vals, Out <: Super](vals: Vals)(implicit `override`: Override.Aux[Vals, Super, Out]): Out = {
+      `override`.newInstanceRecord(vals)
     }
 
     def applyDynamic[Issues10307Workaround](method: String)(): Any =
