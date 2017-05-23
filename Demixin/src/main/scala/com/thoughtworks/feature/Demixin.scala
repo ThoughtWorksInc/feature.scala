@@ -3,6 +3,51 @@ import shapeless._
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 
+/** A type class that converts a mix-in type to [[shapeless.HList]].
+  *
+  *
+  * == Common imports ==
+  *
+  * You may want to use [[Demixin]] with [[shapeless.HList]].
+  *
+  * {{{
+  * import shapeless._
+  * import org.scalatest.Matchers._
+  * }}}
+  *
+  * @example The [[Demixin]] type class can be summoned from [[apply]] method:
+  *
+  *          {{{
+  *          class A; trait B; object C;
+  *          val demixin = Demixin[A with B with C.type with String with Int]
+  *          }}}
+  *
+  *          [[Out]] should be a [[shapeless.HList]] of each type components in the mix-in type `ConjunctionType`.
+  *
+  *          {{{
+  *          manifest[demixin.Out] should be(manifest[A :: B :: C.type :: String :: Int :: HNil])
+  *          }}}
+  *
+  *          The elements in [[Out]] will retain the same order as type components in `ConjunctionType`.
+  *
+  *          {{{
+  *          manifest[demixin.Out] shouldNot be(manifest[String :: A :: B :: C.type :: Int :: HNil])
+  *          }}}
+  *
+  * @example [[Demixin]] on [[Any]] results [[shapeless.HNil]]
+  *
+  *          {{{
+  *          val demixin = Demixin[Any]
+  *          manifest[demixin.Out] should be(manifest[HNil])
+  *          }}}
+  *
+  * @example [[Demixin]] on other types results a [[HList]] that contains only one element
+  *
+  *          {{{
+  *          val demixin = Demixin[String]
+  *          manifest[demixin.Out] should be(manifest[String :: HNil])
+  *          }}}
+  */
 trait Demixin[ConjunctionType] {
   type Out <: HList
 }
@@ -13,14 +58,13 @@ object Demixin {
     type Out = Out0
   }
 
-  def apply[ConjunctionType](implicit demixin: Demixin[ConjunctionType])
-    : Demixin.Aux[ConjunctionType, demixin.Out] =
+  def apply[ConjunctionType](implicit demixin: Demixin[ConjunctionType]): Demixin.Aux[ConjunctionType, demixin.Out] =
     demixin
 
   implicit def materialize[ConjunctionType]: Demixin[ConjunctionType] =
     macro Macros.materialize[ConjunctionType]
 
-  final class Macros(val c: whitebox.Context) extends CaseClassMacros {
+  private[Demixin] final class Macros(val c: whitebox.Context) extends CaseClassMacros {
     import c.universe._
 
     private def demixin(t: Type): Stream[Type] = {
