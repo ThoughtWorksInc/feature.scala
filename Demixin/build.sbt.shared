@@ -5,8 +5,6 @@ libraryDependencies += "com.chuusai" %%% "shapeless" % "2.3.2"
 libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.1" % Test
 
 addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M8").cross(CrossVersion.patch))
-autoCompilerPlugins in Compile := false
-autoCompilerPlugins in Test := true
 
 libraryDependencies += "com.thoughtworks.example" %% "example" % "1.0.0"
 sourceGenerators in Test += Def.task {
