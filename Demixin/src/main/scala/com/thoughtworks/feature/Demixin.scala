@@ -34,14 +34,14 @@ import scala.reflect.macros.whitebox
   *          manifest[demixin.Out] shouldNot be(manifest[String :: A :: B :: C.type :: Int :: HNil])
   *          }}}
   *
-  * @example [[Demixin]] on [[Any]] results [[shapeless.HNil]]
+  * @example [[Out]] of [[Demixin]] on [[Any]] should be [[shapeless.HNil]]
   *
   *          {{{
   *          val demixin = Demixin[Any]
   *          manifest[demixin.Out] should be(manifest[HNil])
   *          }}}
   *
-  * @example [[Demixin]] on other types results a [[HList]] that contains only one element
+  * @example [[Out]] of [[Demixin]] on other types should be a [[HList]] that contains only one element
   *
   *          {{{
   *          val demixin = Demixin[String]
