@@ -15,21 +15,21 @@ import scala.reflect.macros.whitebox
   * import org.scalatest.Matchers._
   * }}}
   *
-  * @example [[Out]] of [[Demixin]] on other types should be a [[HList]] that contains only one element
+  * @example [[Out]] of [[Demixin]] on other types should be a [[shapeless.HList]] that contains only one element
   *
   *          {{{
   *          val demixin = Demixin[String]
   *          manifest[demixin.Out] should be(manifest[String :: HNil])
   *          }}}
   *
-  * @example [[Out]] of [[Demixin]] on [[Any]] should be [[shapeless.HNil]]
+  * @example [[Out]] of [[Demixin]] on [[scala.Any]] should be [[shapeless.HNil]]
   *
   *          {{{
   *          val demixin = Demixin[Any]
   *          manifest[demixin.Out] should be(manifest[HNil])
   *          }}}
   *
-  * @example The [[Demixin]] type class can be summoned from [[apply]] method:
+  * @example The [[Demixin]] type class can be summoned from [[Demixin.apply]] method:
   *
   *          {{{
   *          class A; trait B; object C;
@@ -42,7 +42,7 @@ import scala.reflect.macros.whitebox
   *          manifest[demixin.Out] should be(manifest[A :: B :: C.type :: String :: Int :: HNil])
   *          }}}
   *
-  *          The elements in [[Out]] will retain the same order as type components in `ConjunctionType`.
+  *          The elements in [[Out]] should keep the same order as type components in `ConjunctionType`.
   *
   *          {{{
   *          manifest[demixin.Out] shouldNot be(manifest[String :: A :: B :: C.type :: Int :: HNil])
