@@ -19,14 +19,14 @@ import scala.reflect.macros.whitebox
   *
   *          {{{
   *          val demixin = Demixin[String]
-  *          manifest[demixin.Out] should be(manifest[String :: HNil])
+  *          "implicitly[demixin.Out =:= (String :: HNil)]" should compile
   *          }}}
   *
   * @example [[Out]] of [[Demixin]] on [[scala.Any]] should be [[shapeless.HNil]]
   *
   *          {{{
   *          val demixin = Demixin[Any]
-  *          manifest[demixin.Out] should be(manifest[HNil])
+  *          "implicitly[demixin.Out =:= HNil]" should compile
   *          }}}
   *
   * @example The [[Demixin]] type class can be summoned from [[Demixin.apply]] method:
@@ -39,13 +39,13 @@ import scala.reflect.macros.whitebox
   *          [[Out]] should be a [[shapeless.HList]] of each type components in the mix-in type `ConjunctionType`.
   *
   *          {{{
-  *          manifest[demixin.Out] should be(manifest[A :: B :: C.type :: String :: Int :: HNil])
+  *          "implicitly[demixin.Out =:= (A :: B :: C.type :: String :: Int :: HNil)]" should compile
   *          }}}
   *
   *          The elements in [[Out]] should keep the same order as type components in `ConjunctionType`.
   *
   *          {{{
-  *          manifest[demixin.Out] shouldNot be(manifest[String :: A :: B :: C.type :: Int :: HNil])
+  *          "implicitly[demixin.Out =:!= (String :: A :: B :: C.type :: Int :: HNil)]" should compile
   *          }}}
   */
 trait Demixin[ConjunctionType] {
