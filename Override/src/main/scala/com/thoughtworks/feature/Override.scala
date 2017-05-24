@@ -121,7 +121,6 @@ import scala.language.existentials
   *          val inMemoryDatabaseClientFactory = Override.newInstance[InMemoryDatabaseClientFactory]()
   *          val inMemoryDatabaseClient = inMemoryDatabaseClientFactory.newInstance()
   *
-  *          import org.scalatest.Matchers._
   *          inMemoryDatabaseClient.logger should be(logger)
   *          }}}
   *
