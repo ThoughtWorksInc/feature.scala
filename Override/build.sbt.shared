@@ -4,8 +4,6 @@ libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.1" % Test
 
 libraryDependencies += "org.scalamock" %%% "scalamock-scalatest-support" % "3.5.0" % Test
 
-libraryDependencies += "org.scala-js" %%% "scalajs-java-logging" % "0.1.1" % Test
-
 libraryDependencies += "com.chuusai" %%% "shapeless" % "2.3.2"
 
 scalacOptions += "-Xexperimental"
