@@ -12,6 +12,166 @@ import scala.util.control.NonFatal
 import scala.language.existentials
 
 /**
+  *
+  * == Common Imports ==
+  *
+  * `Override` itself and `inject` annotation are the most common APIs:
+  *
+  * {{{
+  * import com.thoughtworks.feature.Override, Override.inject
+  * }}}
+  *
+  *
+  *
+  * @example == Plugins for [[https://en.wikipedia.org/wiki/Abstract_factory_pattern abstract factory pattern]] ==
+  *
+  *          Suppose you are creating a key-value database client API,
+  *          which support either in-memory storage or sending data to a database server.<br/>
+  *
+  *          Now you want to create two factories of database client for those different destination,
+  *          say, `InMemoryDatabaseClientFactory` and `RemoteDatabaseClientFactory`.
+  *          Both factories implement `trait` `DatabaseClientFactory`.<br/>
+  *
+  *          However, different types of database clients may need different implicit dependencies,
+  *          and they may share some of those dependencies.<br/>
+  *
+  *          As a result, the `newInstance` method in `InMemoryDatabaseClientFactory` and `RemoteDatabaseClientFactory` need different signatures for different implicit parameters.<br/>
+  *
+  *          The ability of variance of method signature can be achieve with the help of [[shapeless.Lazy.Values]] and [[com.thoughtworks.feature.Demixin]].
+  *
+  *          {{{
+  *          import shapeless._
+  *          import shapeless.ops.hlist.Selector
+  *          import scala.annotation.meta.getter
+  *          trait DatabaseClientFactory {
+  *            type MixinDependencies
+  *
+  *            @(inject @getter) val demixin: Demixin[MixinDependencies]
+  *
+  *            type Dependencies <: demixin.Out
+  *
+  *            trait DatabaseClientApi {
+  *              def dependencies: Dependencies
+  *              def save(key: String, value: String): Unit
+  *            }
+  *            type DatabaseClient <: DatabaseClientApi
+  *
+  *            def newInstance()(implicit lazyDependencies: Lazy.Values[Dependencies]): DatabaseClient = {
+  *              clientConstructor.newInstance(lazyDependencies.values)
+  *            }
+  *
+  *            abstract class DatabaseClientFromDependencies(override val dependencies: Dependencies) extends DatabaseClientApi
+  *
+  *            @inject
+  *            def clientConstructor: Constructor[Dependencies => (DatabaseClientFromDependencies with DatabaseClient)]
+  *          }
+  *          }}}
+  *
+  *          `InMemoryDatabaseClientFactory` and `RemoteDatabaseClientFactory` may share some common features.
+  *          For example both factories need logging ability.<br/>
+  *
+  *          You can create a `LogggingFactoryPlugin` for it.
+  *
+  *          {{{
+  *          import java.util.logging.Logger
+  *          import com.thoughtworks.feature.Demixin
+  *
+  *          trait LoggingFactoryPlugin extends DatabaseClientFactory {
+  *            type MixinDependencies <: Logger
+  *
+  *            @inject def loggerSelector: ops.hlist.Selector[Dependencies, Logger]
+  *
+  *            trait LoggingDatabaseClientApi extends DatabaseClientApi {
+  *              implicit def logger = loggerSelector(dependencies)
+  *            }
+  *
+  *            type DatabaseClient <: LoggingDatabaseClientApi
+  *          }
+  *          }}}
+  *
+  *          The `LoggingFactoryPlugin` requires a [[java.util.logging.Logger]] dependency.
+  *          The dependency is declared by mix-in into `MixinDependencies`,
+  *          and can be retrieved from `loggerSelector`.<br/>
+  *
+  *          Now, a factory is able to use the logging feature as long as it extends `LoggingFactoryPlugin`
+  *
+  *          {{{
+  *          trait InMemoryDatabaseClientFactory extends LoggingFactoryPlugin {
+  *
+  *            trait InMemoryDatabaseClientApi extends LoggingDatabaseClientApi {
+  *
+  *              implicitly[Logger].info("in-memory database client created")
+  *
+  *              val storage = scala.collection.mutable.Map.empty[String, String]
+  *
+  *              override def save(key: String, value: String): Unit = {
+  *                storage(key) = value
+  *              }
+  *            }
+  *
+  *            type DatabaseClient <: InMemoryDatabaseClientApi
+  *          }
+  *          }}}
+  *
+  *          The `InMemoryDatabaseClientFactory` can be constructed from `Override.newInstance`:
+  *
+  *          {{{
+  *          implicit val logger = Logger.getLogger(this.getClass.getName)
+  *
+  *          val inMemoryDatabaseClientFactory = Override.newInstance[InMemoryDatabaseClientFactory]()
+  *          val inMemoryDatabaseClient = inMemoryDatabaseClientFactory.newInstance()
+  *
+  *          import org.scalatest.Matchers._
+  *          inMemoryDatabaseClient.logger should be(logger)
+  *          }}}
+  *
+  *          {{{
+  *          inMemoryDatabaseClient.save("foo", "bar")
+  *          inMemoryDatabaseClient.storage should be(Map("foo" -> "bar"))
+  *          }}}
+  *
+  *          It is possible to add more dependencies in another factory.
+  *          For example, `RemoteDatabaseClientFactory` requires a [[scala.concurrent.ExecutionContext]] for performing asynchronous operations,
+  *
+  *          {{{
+  *          import scala.concurrent.ExecutionContext
+  *
+  *          trait RemoteDatabaseClientFactory extends LoggingFactoryPlugin {
+  *
+  *            def remoteProtocolHandler: (String, String, ExecutionContext) => Unit
+  *
+  *            type MixinDependencies <: Logger with ExecutionContext
+  *
+  *            @inject def executionContextSelector: ops.hlist.Selector[Dependencies, ExecutionContext]
+  *
+  *            trait RemoteDatabaseClientApi extends LoggingDatabaseClientApi {
+  *
+  *              implicit def executionContext = executionContextSelector(dependencies)
+  *
+  *              implicitly[Logger].info("in-memory database client created")
+  *
+  *              val storage = scala.collection.mutable.Map.empty[String, String]
+  *
+  *              def save(key: String, value: String): Unit = {
+  *                remoteProtocolHandler(key, value, implicitly[ExecutionContext])
+  *              }
+  *            }
+  *
+  *            type DatabaseClient <: RemoteDatabaseClientApi
+  *          }
+  *          }}}
+  *
+  *          {{{
+  *
+  *          val stubProtocol = stubFunction[String, String, ExecutionContext, Unit]
+  *          val remoteDatabaseClientFactory = Override.newInstance[RemoteDatabaseClientFactory](remoteProtocolHandler = stubProtocol)
+  *          val remoteDatabaseClient = remoteDatabaseClientFactory.newInstance()(new Lazy.Values(logger::executionContext::HNil))
+  *
+  *          remoteDatabaseClient.save("foo", "bar")
+  *          stubProtocol.verify("foo", "bar", executionContext).once()
+  *          remoteDatabaseClient.executionContext should be(executionContext)
+  *          }}}
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 abstract class Override[Vals, Super] extends Dynamic {
@@ -113,7 +273,7 @@ object Override {
         val superTrees = for (superType <- superTypes.distinct) yield {
           tq"$superType"
         }
-        val mixinClassName = TypeName(c.freshName("Mixin"))
+        val mixinClassName = TypeName(c.freshName("Override"))
 
         val argumentHListName = TermName(c.freshName("argumentHList"))
 
