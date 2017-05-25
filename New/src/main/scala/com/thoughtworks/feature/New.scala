@@ -101,11 +101,17 @@ object New {
         val methodType = memberSymbol.info
         val untyper = new OverrideUntyper(baseClass)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
+
+        val modifiers = Modifiers(
+          Flag.OVERRIDE |
+            (if (memberSymbol.isImplicit) Flag.IMPLICIT else NoFlags) |
+            (if (memberSymbol.isLazy) Flag.LAZY else NoFlags)
+        )
         val result =
           if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
-            q"override var $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
+            q"$modifiers var $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
           } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
-            q"override val $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
+            q"$modifiers val $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
           } else {
             val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
               if (argumentSymbol.asTerm.isImplicit) {
@@ -115,13 +121,12 @@ object New {
                 q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
               }
             })
-            q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.shapeless.the.apply[$resultTypeTree]"
+            q"$modifiers def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.shapeless.the.apply[$resultTypeTree]"
           }
         //          c.info(c.enclosingPosition, show(result), true)
         memberSymbol -> result
       }).unzip
       val injectedMembers: Map[TermName, Iterable[Symbol]] = overridenSymbols.groupBy(_.name).withDefaultValue(Nil)
-
       val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = (for {
         member <- output.members
         if member.isTerm && member.isAbstract && injectedMembers(member.name.toTermName).forall { injectedMember =>
