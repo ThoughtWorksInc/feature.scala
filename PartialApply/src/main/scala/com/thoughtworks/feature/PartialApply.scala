@@ -15,7 +15,9 @@ import scala.util.control.NonFatal
   *
   * This will enable the [[com.thoughtworks.feature.PartialApply.PartialApplyOps.partialApply partialApply]] method for any functions
   *
-  * @example Case class companion can partial apply.
+  * @tparam F The function type to be partially apply
+  *
+  * @example Case class companion can partially apply.
   *
   *          {{{
   *          case class MyCaseClass(i: Int, d: Double, s: String)
@@ -23,7 +25,7 @@ import scala.util.control.NonFatal
   *          MyCaseClass.partialApply(s = "seconds").apply(i = 60, d = 1.125) should be(MyCaseClass(s = "seconds", i = 60, d = 1.125))
   *          }}}
   *
-  * @example Function objects can partial apply.
+  * @example Function objects can partially apply.
   *
   *          {{{
   *          object f extends ((Int, Double, String) => String) {
@@ -43,7 +45,7 @@ import scala.util.control.NonFatal
   *          f.partialApply(v2 = 2).partialApply(v3 = 3).partialApply(v1 = 1).apply() should be(f(1, 2, 3))
   *          }}}
   *
-  * @example A function with refined parameters can partial apply.
+  * @example A function with refined parameters can partially apply.
   *
   *          {{{
   *          val f: ((Int, Double, String) => String) { def apply(i: Int, d: Double, s: String): String } = { (i, d, s) =>
@@ -59,7 +61,7 @@ import scala.util.control.NonFatal
   *          val f = { (v1: Int, v2: Int, v3: Int) => (v1 + v2) * v3 }
   *          }}}
   *
-  *          When partial applying the second parameter.
+  *          When partially applying the second parameter.
   *
   *          {{{
   *          val partiallyApplied = f.partialApply(v2 = 2)
