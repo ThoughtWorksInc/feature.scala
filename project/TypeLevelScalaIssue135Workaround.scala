@@ -3,7 +3,7 @@ import sbt.Keys.libraryDependencies
 import sbt.{AutoPlugin, CrossVersion, Def, PluginTrigger, Plugins}
 
 /** Replace `CrossVersion.full` to `CrossVersion.patch` for all `libraryDependencies` */
-object TypeLevelScalaIssueWorkaround extends AutoPlugin {
+object TypeLevelScalaIssue135Workaround extends AutoPlugin {
 
   override def requires: Plugins = ScalaJSPlugin // This plugin should run after ScalaJSPlugin, in order to replace dependencies introduced by ScalaJSPlugin
 
