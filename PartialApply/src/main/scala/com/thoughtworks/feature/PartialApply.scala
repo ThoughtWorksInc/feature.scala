@@ -119,8 +119,8 @@ object PartialApply {
   def apply[F, ParameterName <: String with Singleton](implicit partialApply: PartialApply[F, ParameterName])
     : PartialApply.Aux[F, ParameterName, partialApply.Parameter, partialApply.Rest] = partialApply
 
-  implicit def m[F, ParameterName <: String with Singleton]: PartialApply[F, ParameterName] =
-    macro Macros.apply[F, ParameterName]
+  implicit def materialize[F, ParameterName <: String with Singleton]: PartialApply[F, ParameterName] =
+    macro Macros.materialize[F, ParameterName]
 
   private[feature] final class Macros(val c: whitebox.Context) {
     import c.universe._
@@ -132,7 +132,7 @@ object PartialApply {
       }
       q"${c.prefix.tree}.applyDynamicNarrowNamed($methodName)(..$narrowPairs)"
     }
-    def apply[F: WeakTypeTag, ParameterName <: String with Singleton: WeakTypeTag]: Tree =
+    def materialize[F: WeakTypeTag, ParameterName <: String with Singleton: WeakTypeTag]: Tree =
       try {
 
         val f = weakTypeOf[F]
