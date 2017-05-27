@@ -77,6 +77,15 @@ lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
-      inProjects(UntyperJVM, MixinJVM, DemixinJVM, ConstructorJVM, OverrideJVM, CallerJVM)
+      inProjects(UntyperJVM,
+                 MixinJVM,
+                 DemixinJVM,
+                 ConstructorJVM,
+                 OverrideJVM,
+                 CallerJVM,
+                 TheJVM,
+                 NewJVM,
+                 PartialApplyJVM,
+                 ImplicitApplyJVM)
     }
   )
