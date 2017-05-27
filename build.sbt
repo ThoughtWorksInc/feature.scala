@@ -52,6 +52,12 @@ lazy val NewJVM = New.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val NewJS = New.js.addSbtFiles(file("../build.sbt.shared"))
 
+lazy val PartialApply = crossProject.crossType(CrossType.Pure)
+
+lazy val PartialApplyJVM = PartialApply.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val PartialApplyJS = PartialApply.js.addSbtFiles(file("../build.sbt.shared"))
+
 lazy val Override =
   crossProject
     .crossType(CrossType.Pure)
