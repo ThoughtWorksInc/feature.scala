@@ -76,6 +76,7 @@ lazy val OverrideJS = Override.js.addSbtFiles(file("../build.sbt.shared"))
 lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
+    scalacOptions += "-Yliteral-types",
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
       inProjects(UntyperJVM,
                  MixinJVM,
