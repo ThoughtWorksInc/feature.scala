@@ -5,20 +5,44 @@ import com.thoughtworks.Extractor._
 
 import scala.annotation.StaticAnnotation
 
-/**
+/** A factory to create new instances, especially dynamic mix-ins.
   *
-  * {{{
-  *   trait A
-  *   trait B
-  *   val ab: A with B = New[A with B].constructor()
-  * }}}
+  * @example Given two traits that have no abstract member.
   *
-  * {{{
-  *   trait C {
-  *     var foo: Int
-  *   }
-  *   val ac: A with C = New[A with C].constructor(foo = 1)
-  * }}}
+  *          {{{
+  *          trait Foo
+  *          trait Bar
+  *          }}}
+  *
+  *          When creating a factory for mix-in type of the two types.
+  *
+  *          {{{
+  *          val factory = New[Foo with Bar]
+  *          }}}
+  *
+  *          Then the constructor of the factory should accept no parameters.
+  *
+  *          {{{
+  *          val fooBar: Foo with Bar = factory.constructor()
+  *          fooBar should be(a[Foo])
+  *          fooBar should be(a[Bar])
+  *          }}}
+  *
+  * @example Given a trait that has an abstract member.
+  *          {{{
+  *          trait Foo {
+  *            var bar: Int
+  *          }
+  *          }}}
+  *          When creating a factory for the trait.
+  *          {{{
+  *          val factory = New[Foo]
+  *          }}}
+  *          Then the constructor of the factory should accept one parameter.
+  *          {{{
+  *          val foo: Foo = factory.constructor(bar = 1)
+  *          foo.bar should be(1)
+  *          }}}
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
@@ -28,6 +52,7 @@ trait New[Output] {
 }
 
 object New {
+
   final class inject extends StaticAnnotation
 
   type Aux[Output, Constructor0] = New[Output] {
