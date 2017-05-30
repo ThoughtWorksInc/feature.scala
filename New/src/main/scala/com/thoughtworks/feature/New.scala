@@ -102,7 +102,7 @@ object New {
             case tpe @ TypeRef(NoPrefix, s, superUntype.extract.forall(typeArguments)) =>
               tq"${super.untype(internal
                 .typeRef(NoPrefix, s, Nil)
-                .asSeenFrom(output, baseClass))}[..${typeArguments}]"
+                .asSeenFrom(output, baseClass))}[..$typeArguments]"
           }
         }
 
