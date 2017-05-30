@@ -141,25 +141,28 @@ object PartialApply {
         val parameterLiteralType = weakTypeOf[ParameterName]
 
         val ConstantType(Constant(parameterNameString: String)) = parameterLiteralType.dealias
-        val applySymbol = f.member(TermName("apply")).asMethod
-        val MethodType(params, localResult) = applySymbol.info
-        val output = localResult.asSeenFrom(f, applySymbol.owner)
+        val applySymbol = f.member(TermName("apply"))
+        if (applySymbol.isMethod) {
 
-        params.partition(_.name.toString == parameterNameString) match {
-          case (Seq(), _) =>
-            c.error(c.enclosingPosition, s"not found: parameter $parameterNameString")
-            q"_root_.scala.Predef.???"
-          case (Seq(parameterSymbol), restParameterSymbols) =>
-            val parameter = parameterSymbol.info.asSeenFrom(f, applySymbol.owner)
-            val functionName = TermName(c.freshName("f"))
-            val parameterIdents = params.map(Ident apply _.name)
-            val (restParameterTypes, restParameters) = restParameterSymbols.map { restParameterSymbol =>
-              val restParameterTypeTree = tq"${restParameterSymbol.info.asSeenFrom(f, applySymbol.owner)}"
-              val restParameter = q"val ${TermName(restParameterSymbol.name.toString)}: $restParameterTypeTree"
-              (restParameterTypeTree, restParameter)
-            }.unzip
-            val rest = tq"((..$restParameterTypes) => $output) { def apply(..$restParameters): $output }"
-            val result = q"""
+          val methodSymbol = applySymbol.asMethod
+          val MethodType(params, localResult) = methodSymbol.info
+          val output = localResult.asSeenFrom(f, methodSymbol.owner)
+
+          params.partition(_.name.toString == parameterNameString) match {
+            case (Seq(), _) =>
+              c.error(c.enclosingPosition, s"not found: parameter $parameterNameString")
+              q"_root_.scala.Predef.???"
+            case (Seq(parameterSymbol), restParameterSymbols) =>
+              val parameter = parameterSymbol.info.asSeenFrom(f, methodSymbol.owner)
+              val functionName = TermName(c.freshName("f"))
+              val parameterIdents = params.map(Ident apply _.name)
+              val (restParameterTypes, restParameters) = restParameterSymbols.map { restParameterSymbol =>
+                val restParameterTypeTree = tq"${restParameterSymbol.info.asSeenFrom(f, methodSymbol.owner)}"
+                val restParameter = q"val ${TermName(restParameterSymbol.name.toString)}: $restParameterTypeTree"
+                (restParameterTypeTree, restParameter)
+              }.unzip
+              val rest = tq"((..$restParameterTypes) => $output) { def apply(..$restParameters): $output }"
+              val result = q"""
               new _root_.com.thoughtworks.feature.PartialApply[$f, $parameterLiteralType] {
                 type Parameter = $parameter
                 type Rest = $rest
@@ -169,9 +172,12 @@ object PartialApply {
               }
             """
 //            c.info(c.enclosingPosition, show(result), true)
-            result
+              result
+          }
+        } else {
+          c.error(c.enclosingPosition, s"$f does not have an apply method")
+          q"_root_.scala.Predef.???"
         }
-
       } catch {
         case NonFatal(e) =>
           e.printStackTrace()
