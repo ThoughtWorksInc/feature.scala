@@ -7,6 +7,25 @@ import scala.annotation.StaticAnnotation
 
 /** A factory to create new instances, especially dynamic mix-ins.
   *
+  * @note The factory may contain abstract parameters of abstract types
+  *
+  *       {{{
+  *       trait Outer {
+  *         trait AbstractParameterApi
+  *         type AbstractParameter <: AbstractParameterApi
+  *
+  *         trait FactoryApi {
+  *           def foo: AbstractParameter
+  *         }
+  *         type Factory <: FactoryApi
+  *       }
+  *
+  *       new Outer {
+  *         type Factory = FactoryApi
+  *         val factoryFactory = New[Factory]
+  *       }
+  *       }}}
+  *
   * @example Given two traits that have no abstract member.
   *
   *          {{{
@@ -161,7 +180,7 @@ object New {
         val memberSymbol = member.asTerm
         val methodName = memberSymbol.name.toTermName
         val argumentName = TermName(c.freshName(methodName.toString))
-        val methodType = memberSymbol.info
+        val methodType = memberSymbol.infoIn(output)
         val untyper = new OverrideUntyper(member.owner)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
