@@ -152,7 +152,7 @@ object PartialApply {
         if (applySymbol.isMethod) {
 
           val methodSymbol = applySymbol.asMethod
-          val MethodType(params, localResult) = methodSymbol.info
+          val MethodType(params, localResult) = methodSymbol.infoIn(f)
           val output = localResult.asSeenFrom(f, methodSymbol.owner)
 
           params.partition(_.name.toString == parameterNameString) match {
