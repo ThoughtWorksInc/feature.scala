@@ -4,8 +4,6 @@ libraryDependencies += "com.thoughtworks.extractor" %%% "extractor" % "2.1.0"
 
 libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.value % Provided
 
-libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.1" % Test
-
 scalacOptions += "-Xexperimental"
 
 addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M8").cross(CrossVersion.patch))
