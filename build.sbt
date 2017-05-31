@@ -73,10 +73,16 @@ lazy val OverrideJVM = Override.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val OverrideJS = Override.js.addSbtFiles(file("../build.sbt.shared"))
 
+lazy val byname = crossProject.crossType(CrossType.Pure)
+
+lazy val bynameJVM = byname.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val bynameJS = byname.js.addSbtFiles(file("../build.sbt.shared"))
 lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
     scalacOptions += "-Yliteral-types",
+    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
       inProjects(UntyperJVM,
                  MixinJVM,
@@ -87,6 +93,7 @@ lazy val unidoc = project
                  TheJVM,
                  NewJVM,
                  PartialApplyJVM,
-                 ImplicitApplyJVM)
+                 ImplicitApplyJVM,
+                 bynameJVM)
     }
   )
