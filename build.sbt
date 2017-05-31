@@ -64,15 +64,6 @@ lazy val ImplicitApplyJVM = ImplicitApply.jvm.addSbtFiles(file("../build.sbt.sha
 
 lazy val ImplicitApplyJS = ImplicitApply.js.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val Override =
-  crossProject
-    .crossType(CrossType.Pure)
-    .dependsOn(Untyper, Constructor % Test, Demixin % Test, Mixin % Test, The % Test, Caller % Test)
-
-lazy val OverrideJVM = Override.jvm.addSbtFiles(file("../build.sbt.shared"))
-
-lazy val OverrideJS = Override.js.addSbtFiles(file("../build.sbt.shared"))
-
 lazy val byname = crossProject.crossType(CrossType.Pure)
 
 lazy val bynameJVM = byname.jvm.addSbtFiles(file("../build.sbt.shared"))
@@ -88,7 +79,6 @@ lazy val unidoc = project
                  MixinJVM,
                  DemixinJVM,
                  ConstructorJVM,
-                 OverrideJVM,
                  CallerJVM,
                  TheJVM,
                  NewJVM,
