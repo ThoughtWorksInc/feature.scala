@@ -153,9 +153,9 @@ object New {
         )
         val result =
           if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
-            q"$modifiers var $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
+            q"$modifiers var $methodName = _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value"
           } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
-            q"$modifiers val $methodName = _root_.shapeless.the.apply[$resultTypeTree]"
+            q"$modifiers val $methodName = _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value"
           } else {
             val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
               if (argumentSymbol.asTerm.isImplicit) {
@@ -165,7 +165,7 @@ object New {
                 q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
               }
             })
-            q"$modifiers def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.shapeless.the.apply[$resultTypeTree]"
+            q"$modifiers def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value"
           }
         //          c.info(c.enclosingPosition, show(result), true)
         memberSymbol -> result
