@@ -17,6 +17,19 @@ import scala.util.control.NonFatal
   *
   * @tparam F The function type to be implicitly apply
   *
+  * @example Given a function `f` that requires an call-by-name `Ordering[Int]`
+  *
+  *          {{{
+  *          def f0(x: => Ordering[Int]) = "OK"
+  *          val f = f0 _
+  *          }}}
+  *
+  *          Then `f` can implicitly apply as long as its parameter is implicitly available,
+  *
+  *          {{{
+  *          f.implicitApply should be("OK")
+  *          }}}
+  *
   * @example Given a function `f` that requires an `Ordering[Int]`
   *
   *          {{{
@@ -89,12 +102,17 @@ object ImplicitApply {
       try {
         val f = weakTypeOf[F]
         val applySymbol = f.member(TermName("apply")).asMethod
-        val MethodType(params, localResult) = applySymbol.info
+        val MethodType(params, localResult) = applySymbol.infoIn(f)
         val output = localResult.asSeenFrom(f, applySymbol.owner)
         val functionName = TermName(c.freshName("f"))
 
         val implicitlyTrees = params.map { param =>
-          q"_root_.scala.Predef.implicitly[${param.info.asSeenFrom(f, applySymbol.owner)}]"
+          param.info.asSeenFrom(f, applySymbol.owner).dealias match {
+            case TypeRef(_, byNameParamClass, List(byNameType)) if byNameParamClass == definitions.ByNameParamClass =>
+              q"_root_.scala.Predef.implicitly[$byNameType]"
+            case byValueType =>
+              q"_root_.scala.Predef.implicitly[$byValueType]"
+          }
         }
         val result = q"""
         new _root_.com.thoughtworks.feature.ImplicitApply[$f] {
@@ -104,6 +122,7 @@ object ImplicitApply {
           }
         }
         """
+//        c.info(c.enclosingPosition, show(result), true)
         result
       } catch {
         case NonFatal(e) =>
