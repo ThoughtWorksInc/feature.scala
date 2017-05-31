@@ -17,6 +17,13 @@ import scala.util.control.NonFatal
   *
   * @tparam F The function type to be partially apply
   *
+  * @example Call-by-name functions can partially apply.
+  *          {{{
+  *          def foo(v1: => String, v2: Int) = v1 + v2
+  *          val callByNameFunction = foo _
+  *          PartialApply.materialize[callByNameFunction.type, "v1"].apply(callByNameFunction, "1").apply(v2 = 2) should be(foo(v1 = "1", v2 = 2))
+  *          }}}
+  *
   * @example Case class companion can partially apply.
   *
   *          {{{
@@ -91,8 +98,8 @@ trait PartialApply[F, ParameterName <: String with Singleton] {
 object PartialApply {
 
   type Aux[F, ParameterName <: String with Singleton, Parameter0, Rest0] = PartialApply[F, ParameterName] {
-    type Parameter >: Parameter0
-    type Rest <: Rest0
+    type Parameter = Parameter0
+    type Rest = Rest0
   }
 
   object Runtime {
@@ -162,16 +169,28 @@ object PartialApply {
                 (restParameterTypeTree, restParameter)
               }.unzip
               val rest = tq"((..$restParameterTypes) => $output) { def apply(..$restParameters): $output }"
+
+              val workaround10345 = TermName(c.freshName("workaround10345"))
+              val applyFunctionName = TermName(c.freshName("apply"))
+              val parameterTypeName = TypeName(c.freshName("Parameter"))
+              val restTypeName = TypeName(c.freshName("Rest"))
+
               val result = q"""
-              new _root_.com.thoughtworks.feature.PartialApply[$f, $parameterLiteralType] {
-                type Parameter = $parameter
-                type Rest = $rest
-                def apply($functionName: $f, ${TermName(parameterNameString)}: Parameter): Rest = { (..$restParameters) =>
+                def $applyFunctionName($functionName: $f, ${TermName(parameterNameString)}: $parameter): $rest = { (..$restParameters) =>
                   $functionName(..$parameterIdents)
                 }
-              }
-            """
-//            c.info(c.enclosingPosition, show(result), true)
+                def $workaround10345[$parameterTypeName, $restTypeName]($applyFunctionName: ($f, $parameterTypeName) => $restTypeName) = {
+                  new _root_.com.thoughtworks.feature.PartialApply[$f, $parameterLiteralType] {
+                    type Parameter = $parameterTypeName
+                    type Rest = $restTypeName
+                    def apply($functionName: $f, ${TermName(parameterNameString)}: $parameterTypeName): $restTypeName = {
+                      $applyFunctionName($functionName, ${TermName(parameterNameString)})
+                    }
+                  }
+                }
+                $workaround10345($applyFunctionName _): _root_.com.thoughtworks.feature.PartialApply.Aux[$f, $parameterLiteralType, $parameter, $rest]
+              """
+//              c.info(c.enclosingPosition, show(result), true)
               result
           }
         } else {
