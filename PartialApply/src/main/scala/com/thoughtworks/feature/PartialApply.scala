@@ -170,6 +170,7 @@ object PartialApply {
               }.unzip
               val rest = tq"((..$restParameterTypes) => $output) { def apply(..$restParameters): $output }"
 
+              // Workaround for https://github.com/scala/bug/issues/10345
               val workaround10345 = TermName(c.freshName("workaround10345"))
               val applyFunctionName = TermName(c.freshName("apply"))
               val parameterTypeName = TypeName(c.freshName("Parameter"))
