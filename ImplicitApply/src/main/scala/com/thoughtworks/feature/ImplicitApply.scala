@@ -101,29 +101,37 @@ object ImplicitApply {
     def materialize[F: WeakTypeTag]: Tree =
       try {
         val f = weakTypeOf[F]
-        val applySymbol = f.member(TermName("apply")).asMethod
-        val MethodType(params, localResult) = applySymbol.infoIn(f)
-        val output = localResult.asSeenFrom(f, applySymbol.owner)
-        val functionName = TermName(c.freshName("f"))
+        val applySymbol = f.dealias.member(TermName("apply"))
+        if (applySymbol.isMethod) {
+          val methodSymbol = applySymbol.asMethod
+          val MethodType(params, localResult) = methodSymbol.infoIn(f)
+          val output = localResult.asSeenFrom(f, methodSymbol.owner)
+          val functionName = TermName(c.freshName("f"))
 
-        val implicitlyTrees = params.map { param =>
-          param.info.asSeenFrom(f, applySymbol.owner).dealias match {
-            case TypeRef(_, byNameParamClass, List(byNameType)) if byNameParamClass == definitions.ByNameParamClass =>
-              q"_root_.scala.Predef.implicitly[$byNameType]"
-            case byValueType =>
-              q"_root_.scala.Predef.implicitly[$byValueType]"
+          val implicitlyTrees = params.map { param =>
+            param.info.asSeenFrom(f, methodSymbol.owner).dealias match {
+              case TypeRef(_, byNameParamClass, List(byNameType))
+                  if byNameParamClass == definitions.ByNameParamClass =>
+                q"_root_.scala.Predef.implicitly[$byNameType]"
+              case byValueType =>
+                q"_root_.scala.Predef.implicitly[$byValueType]"
+            }
           }
-        }
-        val result = q"""
-        new _root_.com.thoughtworks.feature.ImplicitApply[$f] {
-          type Out = $output
-          def apply($functionName: $f): Out = {
-            $functionName.apply(..$implicitlyTrees)
+          val result = q"""
+          new _root_.com.thoughtworks.feature.ImplicitApply[$f] {
+            type Out = $output
+            def apply($functionName: $f): Out = {
+              $functionName.apply(..$implicitlyTrees)
+            }
           }
+          """
+          //        c.info(c.enclosingPosition, show(result), true)
+          result
+        } else {
+          c.info(c.enclosingPosition, s"$f does not have an apply method", true)
+          c.error(c.enclosingPosition, s"$f does not have an apply method")
+          q"_root_.scala.Predef.???"
         }
-        """
-//        c.info(c.enclosingPosition, show(result), true)
-        result
       } catch {
         case NonFatal(e) =>
           e.printStackTrace()
