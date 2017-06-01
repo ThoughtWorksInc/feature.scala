@@ -46,11 +46,11 @@ lazy val UntyperJVM = Untyper.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val UntyperJS = Untyper.js.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val New = crossProject.crossType(CrossType.Pure).dependsOn(Untyper, The)
+lazy val Factory = crossProject.crossType(CrossType.Pure).dependsOn(Untyper, The)
 
-lazy val NewJVM = New.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val FactoryJVM = Factory.jvm.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val NewJS = New.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val FactoryJS = Factory.js.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val PartialApply = crossProject.crossType(CrossType.Pure)
 
@@ -81,7 +81,7 @@ lazy val unidoc = project
                  ConstructorJVM,
                  CallerJVM,
                  TheJVM,
-                 NewJVM,
+                 FactoryJVM,
                  PartialApplyJVM,
                  ImplicitApplyJVM,
                  bynameJVM)

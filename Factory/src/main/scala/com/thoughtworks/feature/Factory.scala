@@ -14,15 +14,15 @@ import scala.annotation.StaticAnnotation
   *         trait AbstractParameterApi
   *         type AbstractParameter <: AbstractParameterApi
   *
-  *         trait FactoryApi {
+  *         trait InnerApi {
   *           def foo: AbstractParameter
   *         }
-  *         type Factory <: FactoryApi
+  *         type Inner <: InnerApi
   *       }
   *
   *       new Outer {
-  *         type Factory = FactoryApi
-  *         val factoryFactory = New[Factory]
+  *         type Inner = InnerApi
+  *         val innerFactory = Factory[Inner]
   *       }
   *       }}}
   *
@@ -36,13 +36,13 @@ import scala.annotation.StaticAnnotation
   *          When creating a factory for mix-in type of the two types.
   *
   *          {{{
-  *          val factory = New[Foo with Bar]
+  *          val factory = Factory[Foo with Bar]
   *          }}}
   *
-  *          Then the constructor of the factory should accept no parameters.
+  *          Then the newInstance of the factory should accept no parameters.
   *
   *          {{{
-  *          val fooBar: Foo with Bar = factory.constructor()
+  *          val fooBar: Foo with Bar = factory.newInstance()
   *          fooBar should be(a[Foo])
   *          fooBar should be(a[Bar])
   *          }}}
@@ -55,32 +55,32 @@ import scala.annotation.StaticAnnotation
   *          }}}
   *          When creating a factory for the trait.
   *          {{{
-  *          val factory = New[Foo]
+  *          val factory = Factory[Foo]
   *          }}}
-  *          Then the constructor of the factory should accept one parameter.
+  *          Then the newInstance of the factory should accept one parameter.
   *          {{{
-  *          val foo: Foo = factory.constructor(bar = 1)
+  *          val foo: Foo = factory.newInstance(bar = 1)
   *          foo.bar should be(1)
   *          }}}
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-trait New[Output] {
+trait Factory[Output] {
   type Constructor
-  val constructor: Constructor
+  val newInstance: Constructor
 }
 
-object New {
+object Factory {
 
   final class inject extends StaticAnnotation
 
-  type Aux[Output, Constructor0] = New[Output] {
+  type Aux[Output, Constructor0] = Factory[Output] {
     type Constructor = Constructor0
   }
 
-  implicit def apply[Output]: New[Output] = macro Macros.apply[Output]
+  implicit def apply[Output]: Factory[Output] = macro Macros.apply[Output]
 
-  private[New] final class Macros(val c: whitebox.Context) {
+  private[Factory] final class Macros(val c: whitebox.Context) {
     import c.universe._
 
     implicit final class Unzip4[A, B, C, D](val xs: Iterable[(A, B, C, D)]) {
@@ -185,14 +185,14 @@ object New {
         val resultTypeTree = untyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
-           resultTypeTree,
-           q"val $argumentName: $resultTypeTree",
-           q"val $methodName: $resultTypeTree")
+            resultTypeTree,
+            q"val $argumentName: $resultTypeTree",
+            q"val $methodName: $resultTypeTree")
         } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
           (q"override val $methodName = $argumentName",
-           resultTypeTree,
-           q"val $argumentName: $resultTypeTree",
-           q"val $methodName: $resultTypeTree")
+            resultTypeTree,
+            q"val $argumentName: $resultTypeTree",
+            q"val $methodName: $resultTypeTree")
         } else {
           val (argumentTrees, argumentTypeTrees, argumentIdTrees) = methodType.paramLists
             .map(_.map { argumentSymbol =>
@@ -214,9 +214,9 @@ object New {
             }
           }
           (q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = $argumentName",
-           functionTypeTree,
-           q"val $argumentName: $functionTypeTree",
-           q"val $methodName: $functionTypeTree")
+            functionTypeTree,
+            q"val $argumentName: $functionTypeTree",
+            q"val $methodName: $functionTypeTree")
         }
       }).unzip4
       val overridenTypes =
@@ -257,18 +257,18 @@ object New {
 
       val makeNew = TermName(c.freshName("makeNew"))
       val constructorMethod = TermName(c.freshName("constructor"))
-      val constructor = TermName(c.freshName("constructor"))
+      val newInstance = TermName(c.freshName("newInstance"))
       val refinedOutput = TypeName(c.freshName("RefinedOutput"))
       val result = q"""
-      def $makeNew[$refinedOutput]($constructor: (..$parameterTypeTrees) => $refinedOutput): _root_.com.thoughtworks.feature.New.Aux[
+      def $makeNew[$refinedOutput]($newInstance: (..$parameterTypeTrees) => $refinedOutput): _root_.com.thoughtworks.feature.Factory.Aux[
         $output,
         ((..$parameterTypeTrees) => $refinedOutput) {
           def apply(..$refinedTree): $refinedOutput
-        }] = new _root_.com.thoughtworks.feature.New[$output] {
+        }] = new _root_.com.thoughtworks.feature.Factory[$output] {
         type Constructor = ((..$parameterTypeTrees) => $refinedOutput) {
           def apply(..$refinedTree): $refinedOutput
         }
-        override val constructor: Constructor = $constructor
+        override val newInstance: Constructor = $newInstance
       }
 
       def $constructorMethod(..$parameterTrees) = {
@@ -279,10 +279,10 @@ object New {
         }
         new $mixinClassName
       }
-      val $constructor = $constructorMethod _
-      $makeNew($constructor)
+      val $newInstance = $constructorMethod _
+      $makeNew($newInstance)
       """
-//      c.info(c.enclosingPosition, show(result), true)
+      //      c.info(c.enclosingPosition, show(result), true)
       result
     }
 
