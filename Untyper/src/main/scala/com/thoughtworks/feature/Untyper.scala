@@ -21,6 +21,8 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
       q"$pre.$sym"
     case SuperType(singletonValue.extract(thisValue), ThisType(superSymbol)) =>
       Super(thisValue, superSymbol.name.toTypeName)
+    case SingleType(untype.extract(pre), sym) =>
+      SelectFromTypeTree(pre, sym.name.toTypeName)
   }
 
   def termSymbol: PartialFunction[Symbol, TermSymbol] = {
@@ -98,6 +100,8 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
       tq"$sym[..${args.map(untype)}]"
     case TypeRef(singletonValue.extract(pre), sym, args) =>
       tq"$pre.$sym[..${args.map(untype)}]"
+    case TypeRef(untype.extract(pre), sym, args) =>
+      tq"$pre#$sym[..${args.map(untype)}]"
     case RefinedType(untype.extract.forall(parents), decls) =>
       CompoundTypeTree(Template(parents.toList, noSelfType, decls.view.map(definition).toList))
     case PolyType(typeSymbol.extract.forall(typeDefinition.extract.forall(typeParams)), untype.extract(resultType)) =>
