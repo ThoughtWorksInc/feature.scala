@@ -7,4 +7,4 @@
 
 * [Caller](https://javadoc.io/page/com.thoughtworks.feature/unidoc_2.12/latest/com/thoughtworks/feature/Caller.html) - an implicit value that points to the function caller
 * [Constructor](https://javadoc.io/page/com.thoughtworks.feature/unidoc_2.12/latest/com/thoughtworks/feature/Constructor.html) - a dynamically generated type class for creating classes and traits from constructors.
-* [Factory](https://javadoc.io/page/com.thoughtworks.feature/unidoc_2.12/latest/com/thoughtworks/feature/Factory.html) - a dynamically generated type class for creating classes and traits by overriding abstract members.
+* [Factory](https://javadoc.io/page/com.thoughtworks.feature/unidoc_2.12/latest/com/thoughtworks/feature/Factory.html) - a dynamically generated type class for creating classes and traits by automatically overriding abstract members.
