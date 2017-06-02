@@ -1,5 +1,0 @@
-enablePlugins(Example)
-
-libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.value
-
-libraryDependencies += "commons-io" % "commons-io" % "2.5"
