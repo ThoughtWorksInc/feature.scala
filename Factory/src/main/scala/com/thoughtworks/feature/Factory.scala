@@ -26,6 +26,37 @@ import scala.annotation.StaticAnnotation
   *       }
   *       }}}
   *
+  * @example Given a trait that contains an abstract method annotated as [[Factory.inject @inject]].
+  *
+  *          {{{
+  *          import com.thoughtworks.feature.Factory.inject
+  *          trait Foo[A] {
+  *            @inject def orderingA: Ordering[A]
+  *          }
+  *          }}}
+  *
+  *          When creating a factory for the trait
+  *
+  *          {{{
+  *          val factory = Factory[Foo[Int]]
+  *          }}}
+  *
+  *          Then the `@inject` method will be replaced to an implicit value.
+  *
+  *          {{{
+  *          val foo = factory.newInstance()
+  *          foo.orderingA should be(implicitly[Ordering[Int]])
+  *          }}}
+  *
+  *          It will not compile if no implicit value found.
+  *
+  *          For example, `Foo[Symbol]` requires an implicit value of type `Ordering[Symbol]`, which is not availble.
+  *
+  *          {{{
+  *          "Factory[Foo[Symbol]]" shouldNot compile
+  *          }}}
+  *
+  *
   * @example Given two traits that have no abstract member.
   *
   *          {{{
@@ -39,7 +70,7 @@ import scala.annotation.StaticAnnotation
   *          val factory = Factory[Foo with Bar]
   *          }}}
   *
-  *          Then the newInstance of the factory should accept no parameters.
+  *          Then the [[newInstance]] method of the factory should accept no parameters.
   *
   *          {{{
   *          val fooBar: Foo with Bar = factory.newInstance()
@@ -57,7 +88,7 @@ import scala.annotation.StaticAnnotation
   *          {{{
   *          val factory = Factory[Foo]
   *          }}}
-  *          Then the newInstance of the factory should accept one parameter.
+  *          Then the [[newInstance]] method of the factory should accept one parameter.
   *          {{{
   *          val foo: Foo = factory.newInstance(bar = 1)
   *          foo.bar should be(1)
@@ -66,7 +97,14 @@ import scala.annotation.StaticAnnotation
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 trait Factory[Output] {
+
+  /** A function type that returns `Output`.
+    *
+    * The parameter types are all abstract members in `Output`
+    */
   type Constructor
+
+  /** Returns an instance of `Output`, which overrides abstract members in `Output` according to parameters pass to this [[newInstance]] method. */
   val newInstance: Constructor
 }
 
@@ -185,14 +223,14 @@ object Factory {
         val resultTypeTree = untyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
-            resultTypeTree,
-            q"val $argumentName: $resultTypeTree",
-            q"val $methodName: $resultTypeTree")
+           resultTypeTree,
+           q"val $argumentName: $resultTypeTree",
+           q"val $methodName: $resultTypeTree")
         } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
           (q"override val $methodName = $argumentName",
-            resultTypeTree,
-            q"val $argumentName: $resultTypeTree",
-            q"val $methodName: $resultTypeTree")
+           resultTypeTree,
+           q"val $argumentName: $resultTypeTree",
+           q"val $methodName: $resultTypeTree")
         } else {
           val (argumentTrees, argumentTypeTrees, argumentIdTrees) = methodType.paramLists
             .map(_.map { argumentSymbol =>
@@ -214,9 +252,9 @@ object Factory {
             }
           }
           (q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = $argumentName",
-            functionTypeTree,
-            q"val $argumentName: $functionTypeTree",
-            q"val $methodName: $functionTypeTree")
+           functionTypeTree,
+           q"val $argumentName: $functionTypeTree",
+           q"val $methodName: $functionTypeTree")
         }
       }).unzip4
       val overridenTypes =
