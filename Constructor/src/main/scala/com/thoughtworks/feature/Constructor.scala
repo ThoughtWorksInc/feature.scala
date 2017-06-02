@@ -92,9 +92,7 @@ final class Constructor[F](val newInstance: F) extends AnyVal
 
 object Constructor {
 
-  def apply[F](implicit constructor: Constructor[F]): Constructor[F] = constructor
-
-  implicit def materialize[F]: Constructor[F] = macro Macros.materialize[F]
+  implicit def apply[F]: Constructor[F] = macro Macros.apply[F]
 
   final class Macros(val c: blackbox.Context) {
     import c.universe._
@@ -108,7 +106,7 @@ object Constructor {
       }
     }
 
-    def materialize[F: WeakTypeTag]: Tree = {
+    def apply[F: WeakTypeTag]: Tree = {
       weakTypeOf[F].dealias match {
         case TypeRef(_, functionSymbol, argumentTypes :+ returnType)
             if functionSymbol == definitions.FunctionClass(argumentTypes.length) =>
