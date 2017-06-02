@@ -69,6 +69,13 @@ lazy val byname = crossProject.crossType(CrossType.Pure)
 lazy val bynameJVM = byname.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val bynameJS = byname.js.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val include = crossProject.crossType(CrossType.Pure)
+
+lazy val includeJVM = include.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val includeJS = include.js.addSbtFiles(file("../build.sbt.shared"))
+
 lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
@@ -84,6 +91,7 @@ lazy val unidoc = project
                  FactoryJVM,
                  PartialApplyJVM,
                  ImplicitApplyJVM,
-                 bynameJVM)
+                 bynameJVM,
+                 includeJVM)
     }
   )
