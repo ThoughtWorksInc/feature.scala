@@ -3,7 +3,7 @@ import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import com.thoughtworks.Extractor._
 
-import scala.annotation.StaticAnnotation
+import scala.annotation.{StaticAnnotation, compileTimeOnly}
 
 /** A factory to create new instances, especially dynamic mix-ins.
   *
@@ -257,6 +257,7 @@ object Factory {
            q"val $methodName: $functionTypeTree")
         }
       }).unzip4
+      val (defProxies, valProxies) = proxies.partition(_.isDef)
       val overridenTypes =
         (for {
           baseClass <- output.baseClasses.reverse
@@ -310,10 +311,12 @@ object Factory {
       }
 
       def $constructorMethod(..$parameterTrees) = {
-        final class $mixinClassName extends ..$componentTypes {
+        final class $mixinClassName extends {
           ..$overridenTypes
+          ..$valProxies
+        } with ..$componentTypes {
+          ..$defProxies
           ..$injects
-          ..$proxies
         }
         new $mixinClassName
       }
