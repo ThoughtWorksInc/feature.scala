@@ -10,7 +10,7 @@ import The._
 final class TheSpec extends FreeSpec with Matchers {
 
   "Given a method that looking for the implicit value Int <:< Any" - {
-    def ask[B](implicit the: The[Int <:< Any, B]): B = {
+    def ask[B <: Int <:< Any](implicit the: The[Int <:< Any, B]): B = {
       the.value
     }
     "When take the narrow value" - {
