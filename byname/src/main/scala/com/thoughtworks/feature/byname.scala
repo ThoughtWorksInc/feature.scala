@@ -23,4 +23,24 @@ object byname {
 
   type ByName[A] = byNameContainer.ByName[A]
 
+  trait IsByName[F] {
+    type Value
+
+    def make(byName: => Value): F
+    def extract(byName: F): Value
+  }
+
+  object IsByName {
+    type Aux[F, Value0] = IsByName[F] {
+      type Value = Value0
+    }
+    implicit def apply[Value0]: IsByName.Aux[ByName[Value0], Value0] =
+      new IsByName[ByName[Value0]] {
+        override type Value = Value0
+
+        override def make(byName: => Value0): ByName[Value0] = identity[ByName[Value0]](byName)
+
+        override def extract(byName: => Value0): Value0 = byName
+      }
+  }
 }
