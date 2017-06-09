@@ -64,16 +64,17 @@ lazy val ImplicitApplyJVM = ImplicitApply.jvm.addSbtFiles(file("../build.sbt.sha
 
 lazy val ImplicitApplyJS = ImplicitApply.js.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val byname = crossProject.crossType(CrossType.Pure)
+lazy val ByName = crossProject.crossType(CrossType.Pure)
 
-lazy val bynameJVM = byname.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val ByNameJVM = ByName.jvm.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val bynameJS = byname.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val ByNameJS = ByName.js.addSbtFiles(file("../build.sbt.shared"))
 lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
     scalacOptions += "-Yliteral-types",
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch),
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
       inProjects(UntyperJVM,
                  MixinJVM,
@@ -84,6 +85,6 @@ lazy val unidoc = project
                  FactoryJVM,
                  PartialApplyJVM,
                  ImplicitApplyJVM,
-                 bynameJVM)
+                 ByNameJVM)
     }
   )
