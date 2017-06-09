@@ -93,10 +93,8 @@ object ByName {
     trait Make[A] {
       def make(a: A): A = a
     }
-
     new ByName[`=>`[Value0]] with Make[`=>`[Value0]] {
       override type Value = Value0
-
       override def extract(byName: => Value0): Value0 = byName
     }
   }
