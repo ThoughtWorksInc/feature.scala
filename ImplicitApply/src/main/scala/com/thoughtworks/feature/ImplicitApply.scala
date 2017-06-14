@@ -82,11 +82,6 @@ object ImplicitApply {
     type Out = Out0
   }
 
-  object Runtime {
-    private[Runtime] type Id[+A] = A
-    def narrow(a: Any): Id[a.type] = a
-  }
-
   implicit final class ImplicitApplyOps[F](f: F) {
     def implicitApply(implicit implicitApply: ImplicitApply[F]): implicitApply.Out = implicitApply(f)
   }
@@ -107,23 +102,31 @@ object ImplicitApply {
           val MethodType(params, localResult) = methodSymbol.infoIn(f)
           val output = localResult.asSeenFrom(f, methodSymbol.owner)
           val functionName = TermName(c.freshName("f"))
-
-          val implicitlyTrees = params.map { param =>
+          val (implicitlyValues, parameters, ids) = params.map { param =>
+            val implicitName = TermName(c.freshName("implicitValue"))
             param.info.asSeenFrom(f, methodSymbol.owner).dealias match {
-              case TypeRef(_, byNameParamClass, List(byNameType))
+              case byNameType @ TypeRef(_, byNameParamClass, List(valueType))
                   if byNameParamClass == definitions.ByNameParamClass =>
-                q"_root_.scala.Predef.implicitly[$byNameType]"
+                (c.inferImplicitValue(valueType, silent = false),
+                 q"val $implicitName: $byNameType = $EmptyTree",
+                 q"$implicitName")
               case byValueType =>
-                q"_root_.scala.Predef.implicitly[$byValueType]"
+                (c.inferImplicitValue(byValueType, silent = false),
+                 q"val $implicitName: $byValueType = $EmptyTree",
+                 q"$implicitName")
+
             }
-          }
+          }.unzip3
+          val factoryName = TermName(c.freshName("implicitApplyFactory"))
           val result = q"""
-          new _root_.com.thoughtworks.feature.ImplicitApply[$f] {
+          @_root_.scala.inline
+          def $factoryName(..$parameters) = new _root_.com.thoughtworks.feature.ImplicitApply[$f] {
             type Out = $output
             def apply($functionName: $f): Out = {
-              $functionName.apply(..$implicitlyTrees)
+              $functionName.apply(..$ids)
             }
           }
+          $factoryName(..$implicitlyValues)
           """
           //        c.info(c.enclosingPosition, show(result), true)
           result
