@@ -1,7 +1,7 @@
 # feature.scala <a href="http://thoughtworks.com/"><img align="right" src="https://www.thoughtworks.com/imgs/tw-logo.png" title="ThoughtWorks" height="15"/></a>
 
 [![Build Status](https://travis-ci.org/ThoughtWorksInc/feature.scala.svg?branch=master)](https://travis-ci.org/ThoughtWorksInc/feature.scala)
-[![Scaladoc](https://javadoc.io/badge/com.thoughtworks.feature/unidoc_2.12.svg?label=scaladoc)](https://javadoc.io/page/com.thoughtworks.feature/unidoc_2.12/latest/com/thoughtworks/feature/index.html)
+[![Scaladoc](https://javadoc.io/badge/com.thoughtworks.feature/factory_2.12.svg?label=scaladoc)](https://javadoc.io/doc/com.thoughtworks.feature/factory_2.12)
 
 **feature.scala** is a collection of utilities to access Scala language features on the type level.
 
