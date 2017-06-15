@@ -3,6 +3,7 @@ import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import com.thoughtworks.Extractor._
 
+import scala.annotation.meta.getter
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 
 /** A factory to create new instances, especially dynamic mix-ins.
@@ -140,6 +141,7 @@ trait Factory[Output] {
 
 object Factory {
 
+  @getter
   final class inject extends StaticAnnotation
 
   type Aux[Output, Constructor0] = Factory[Output] {
