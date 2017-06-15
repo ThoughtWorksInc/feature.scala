@@ -107,23 +107,27 @@ object PartialApply {
     def narrow(a: Any): Id[a.type] = a
   }
 
-  implicit final class PartialApplyOps[F](f: F) extends Dynamic {
-    def partialApply: this.type = this
+  trait ToPartialApplyOps {
+    implicit final class PartialApplyOps[F](f: F) extends Dynamic {
+      def partialApply: this.type = this
 
-    // Workaround for https://github.com/typelevel/scala/issues/151
-    def applyDynamicNamed(methodName: String)(pairs: Any*): Any = macro Macros.applyDynamicNamed
+      // Workaround for https://github.com/typelevel/scala/issues/151
+      def applyDynamicNamed(methodName: String)(pairs: Any*): Any = macro Macros.applyDynamicNamed
 
-    def applyDynamicNarrowNamed[M <: String with Singleton,
-                                ParameterName <: String with Singleton,
-                                Parameter,
-                                RequiredParameter,
-                                Rest](methodName: M)(pair: (ParameterName, Parameter))(
-        implicit partialApply: PartialApply.Aux[F, ParameterName, RequiredParameter, Rest],
-        constraint: Parameter <:< RequiredParameter
-    ): Rest = {
-      partialApply(f, pair._2)
+      def applyDynamicNarrowNamed[M <: String with Singleton,
+                                  ParameterName <: String with Singleton,
+                                  Parameter,
+                                  RequiredParameter,
+                                  Rest](methodName: M)(pair: (ParameterName, Parameter))(
+          implicit partialApply: PartialApply.Aux[F, ParameterName, RequiredParameter, Rest],
+          constraint: Parameter <:< RequiredParameter
+      ): Rest = {
+        partialApply(f, pair._2)
+      }
     }
   }
+
+  object ops extends ToPartialApplyOps
 
   def apply[F, ParameterName <: String with Singleton](implicit partialApply: PartialApply[F, ParameterName])
     : PartialApply.Aux[F, ParameterName, partialApply.Parameter, partialApply.Rest] = partialApply

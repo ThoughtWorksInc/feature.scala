@@ -1,5 +1,7 @@
 package com.thoughtworks.feature
 
+import simulacrum.{op, typeclass}
+
 import scala.reflect.macros.whitebox
 import scala.language.dynamics
 import scala.language.experimental.macros
@@ -10,7 +12,7 @@ import scala.util.control.NonFatal
   * = Imports =
   *
   * {{{
-  * import com.thoughtworks.feature.ImplicitApply._
+  * import com.thoughtworks.feature.ImplicitApply.ops._
   * }}}
   *
   * This will enable the [[com.thoughtworks.feature.ImplicitApply.ImplicitApplyOps.implicitApply implicitApply]] method for any functions
@@ -70,9 +72,11 @@ import scala.util.control.NonFatal
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
+@typeclass
 trait ImplicitApply[F] {
   type Out
 
+  @op("implicitApply")
   def apply(f: F): Out
 }
 
@@ -81,12 +85,6 @@ object ImplicitApply {
   type Aux[F, Out0] = ImplicitApply[F] {
     type Out = Out0
   }
-
-  implicit final class ImplicitApplyOps[F](f: F) {
-    def implicitApply(implicit implicitApply: ImplicitApply[F]): implicitApply.Out = implicitApply(f)
-  }
-
-  def apply[F](implicit implicitApply: ImplicitApply[F]): ImplicitApply.Aux[F, implicitApply.Out] = implicitApply
 
   implicit def materialize[F]: ImplicitApply[F] = macro Macros.materialize[F]
 
