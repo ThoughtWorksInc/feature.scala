@@ -197,8 +197,7 @@ object Factory {
           replaceTypeArguments.orElse(super.untype)
         }
       }
-
-      val (overridenSymbols, injects) = (for {
+      val injectedNames = (for {
         baseClass <- output.baseClasses.reverse
         member <- baseClass.info.decls
         if member.isTerm && {
@@ -206,12 +205,16 @@ object Factory {
           member.annotations.exists { a =>
             a.tree.tpe <:< injectType
           }
-        } && !member.asTerm.isSetter
+        }
+      } yield member.name)(collection.breakOut(Set.canBuildFrom))
+
+      val injects = for {
+        injectedName <- injectedNames
       } yield {
-        val memberSymbol = member.asTerm
-        val methodName = memberSymbol.name.toTermName
+        val methodName = injectedName.toTermName
+        val memberSymbol = output.member(methodName).asTerm
         val methodType = memberSymbol.info
-        val untyper = new OverrideUntyper(baseClass)
+        val untyper = new OverrideUntyper(memberSymbol.owner)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
 
         val modifiers = Modifiers(
@@ -234,13 +237,14 @@ object Factory {
             }
             """
           } else {
-            val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
-              if (argumentSymbol.asTerm.isImplicit) {
-                q"implicit val ${argumentSymbol.name.toTermName}: ${untyper
-                  .untype(argumentSymbol.info)}"
-              } else {
-                q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
-              }
+            val argumentTrees = methodType.paramLists.map(_.map {
+              argumentSymbol =>
+                if (argumentSymbol.asTerm.isImplicit) {
+                  q"implicit val ${argumentSymbol.name.toTermName}: ${untyper
+                    .untype(argumentSymbol.info)}"
+                } else {
+                  q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
+                }
             })
             q"""
             $modifiers def $methodName[..${methodType.typeArgs}](...$argumentTrees) = {
@@ -250,14 +254,11 @@ object Factory {
             """
           }
         //          c.info(c.enclosingPosition, show(result), true)
-        memberSymbol -> result
-      }).unzip
-      val injectedMembers: Map[TermName, Iterable[Symbol]] = overridenSymbols.groupBy(_.name).withDefaultValue(Nil)
+        result
+      }
       val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = (for {
         member <- output.members
-        if member.isTerm && member.isAbstract && injectedMembers(member.name.toTermName).forall { injectedMember =>
-          !(injectedMember.infoIn(output) <:< member.infoIn(output))
-        } && !member.asTerm.isSetter
+        if !injectedNames(member.name) && member.isTerm && member.isAbstract && !member.asTerm.isSetter
       } yield {
         val memberSymbol = member.asTerm
         val methodName = memberSymbol.name.toTermName
@@ -276,23 +277,25 @@ object Factory {
            q"val $argumentName: $resultTypeTree",
            q"val $methodName: $resultTypeTree")
         } else {
-          val (argumentTrees, argumentTypeTrees, argumentIdTrees) = methodType.paramLists
-            .map(_.map { argumentSymbol =>
-              val argumentTypeTree = untyper.untype(argumentSymbol.info)
-              val argumentName = argumentSymbol.name.toTermName
-              val argumentTree = if (argumentSymbol.asTerm.isImplicit) {
-                q"implicit val $argumentName: $argumentTypeTree"
-              } else {
-                q"val $argumentName: $argumentTypeTree"
-              }
-              (argumentTree, argumentTypeTree, Ident(argumentName))
-            }.unzip3)
-            .unzip3
+          val (argumentTrees, argumentTypeTrees, argumentIdTrees) =
+            methodType.paramLists
+              .map(_.map { argumentSymbol =>
+                val argumentTypeTree = untyper.untype(argumentSymbol.info)
+                val argumentName = argumentSymbol.name.toTermName
+                val argumentTree = if (argumentSymbol.asTerm.isImplicit) {
+                  q"implicit val $argumentName: $argumentTypeTree"
+                } else {
+                  q"val $argumentName: $argumentTypeTree"
+                }
+                (argumentTree, argumentTypeTree, Ident(argumentName))
+              }.unzip3)
+              .unzip3
           val functionTypeTree = if (argumentTypeTrees.isEmpty) {
             tq"${definitions.ByNameParamClass}[$resultTypeTree]"
           } else {
-            argumentTypeTrees.foldRight(resultTypeTree) { (arguments, result) =>
-              tq"..$arguments => $result"
+            argumentTypeTrees.foldRight(resultTypeTree) {
+              (arguments, result) =>
+                tq"..$arguments => $result"
             }
           }
           (q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = $argumentName",
@@ -319,15 +322,16 @@ object Factory {
           }
           .map {
             case (name, members) =>
-              val lowerBounds = members.collect(scala.Function.unlift[Symbol, Tree] { memberSymbol =>
-                val TypeBounds(_, lowerBound) = memberSymbol.info
-                if (lowerBound =:= definitions.AnyTpe) {
-                  None
-                } else {
-                  val untyper = new OverrideUntyper(memberSymbol.owner)
-                  Some(untyper.untype(lowerBound))
-                }
-              })
+              val lowerBounds = members.collect(
+                scala.Function.unlift[Symbol, Tree] { memberSymbol =>
+                  val TypeBounds(_, lowerBound) = memberSymbol.info
+                  if (lowerBound =:= definitions.AnyTpe) {
+                    None
+                  } else {
+                    val untyper = new OverrideUntyper(memberSymbol.owner)
+                    Some(untyper.untype(lowerBound))
+                  }
+                })
               val typeTree = if (lowerBounds.isEmpty) {
                 TypeTree(definitions.AnyTpe)
               } else {
