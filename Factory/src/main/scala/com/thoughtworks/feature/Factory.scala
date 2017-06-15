@@ -26,6 +26,36 @@ import scala.annotation.{StaticAnnotation, compileTimeOnly}
   *       }
   *       }}}
   *
+  * @example Given a trait that contains an **implicit** abstract method annotated as [[Factory.inject @inject]].
+  *
+  *          {{{
+  *          import com.thoughtworks.feature.Factory.inject
+  *          trait Foo[A] {
+  *            @inject implicit def orderingA: Ordering[A]
+  *          }
+  *          }}}
+  *
+  *          When creating a factory for the trait
+  *
+  *          {{{
+  *          val factory = Factory[Foo[Int]]
+  *          }}}
+  *
+  *          Then the `@inject` method will be replaced to an implicit value.
+  *
+  *          {{{
+  *          val foo = factory.newInstance()
+  *          foo.orderingA should be(implicitly[Ordering[Int]])
+  *          }}}
+  *
+  *          It will not compile if no implicit value found.
+  *
+  *          For example, `Foo[Symbol]` requires an implicit value of type `Ordering[Symbol]`, which is not availble.
+  *
+  *          {{{
+  *          "Factory[Foo[Symbol]]" shouldNot compile
+  *          }}}
+  *
   * @example Given a trait that contains an abstract method annotated as [[Factory.inject @inject]].
   *
   *          {{{
@@ -191,9 +221,18 @@ object Factory {
         )
         val result =
           if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
-            q"$modifiers var $methodName = _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value"
+            q"""$modifiers var $methodName = {
+              val $methodName = ()
+              _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value
+            }
+            """
           } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
-            q"$modifiers val $methodName = _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value"
+            q"""
+            $modifiers val $methodName = {
+               val $methodName = ()
+               _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value
+            }
+            """
           } else {
             val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
               if (argumentSymbol.asTerm.isImplicit) {
@@ -203,7 +242,12 @@ object Factory {
                 q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
               }
             })
-            q"$modifiers def $methodName[..${methodType.typeArgs}](...$argumentTrees) = _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value"
+            q"""
+            $modifiers def $methodName[..${methodType.typeArgs}](...$argumentTrees) = {
+              val $methodName = ()
+              _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value
+            }
+            """
           }
         //          c.info(c.enclosingPosition, show(result), true)
         memberSymbol -> result
