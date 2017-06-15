@@ -10,10 +10,10 @@ import scala.util.control.NonFatal
   * = Imports =
   *
   * {{{
-  * import com.thoughtworks.feature.PartialApply._
+  * import com.thoughtworks.feature.PartialApply.ops._
   * }}}
   *
-  * This will enable the [[com.thoughtworks.feature.PartialApply.PartialApplyOps.partialApply partialApply]] method for any functions
+  * This will enable the [[com.thoughtworks.feature.PartialApply.ToPartialApplyOps.PartialApplyOps.partialApply partialApply]] method for any functions
   *
   * @tparam F The function type to be partially apply
   *
