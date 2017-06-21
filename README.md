@@ -1,7 +1,7 @@
 # feature.scala <a href="http://thoughtworks.com/"><img align="right" src="https://www.thoughtworks.com/imgs/tw-logo.png" title="ThoughtWorks" height="15"/></a>
 
 [![Build Status](https://travis-ci.org/ThoughtWorksInc/feature.scala.svg?branch=master)](https://travis-ci.org/ThoughtWorksInc/feature.scala)
-[![Scaladoc](https://javadoc.io/badge/com.thoughtworks.feature/factory_2.11.svg?label=scaladoc)](https://javadoc.io/doc/com.thoughtworks.feature/factory_2.11)
+[![Scaladoc](https://javadoc.io/badge/com.thoughtworks.feature/factory_2.11.svg?label=scaladoc)](https://javadoc.io/doc/com.thoughtworks.feature/the_2.11)
 
 [![Latest version](https://index.scala-lang.org/thoughtworksinc/feature.scala/the/latest.svg)](https://index.scala-lang.org/thoughtworksinc/feature.scala/the)
 [![Latest version](https://index.scala-lang.org/thoughtworksinc/feature.scala/factory/latest.svg)](https://index.scala-lang.org/thoughtworksinc/feature.scala/factory)
