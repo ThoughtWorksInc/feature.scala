@@ -4,10 +4,11 @@ import simulacrum.{op, typeclass}
 
 import scala.reflect.macros.whitebox
 import scala.language.dynamics
+import scala.language.implicitConversions
 import scala.language.experimental.macros
 import scala.util.control.NonFatal
 
-/** A dependent type class that apply `F` with implicit values as parameters.
+/** A dependent type class that invokes `F` with implicit values as parameters.
   *
   * = Imports =
   *
@@ -17,7 +18,7 @@ import scala.util.control.NonFatal
   *
   * This will enable the [[com.thoughtworks.feature.ImplicitApply.ImplicitApplyOps.implicitApply implicitApply]] method for any functions
   *
-  * @tparam F The function type to be implicitly apply
+  * @tparam F The function type to be implicitly invoked
   *
   * @example Given a function `f` that requires an call-by-name `Ordering[Int]`
   *
