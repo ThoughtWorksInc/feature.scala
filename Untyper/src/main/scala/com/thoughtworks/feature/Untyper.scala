@@ -3,7 +3,11 @@ package com.thoughtworks.feature
 import scala.reflect.api.Universe
 import com.thoughtworks.Extractor._
 
-/**
+/** A utility to convert [[scala.reflect.api.Universe.Type Type]] to [[scala.reflect.api.Universe.Tree Tree]].
+  *
+  * @note The primary intent of '''Untyper''' class is for some macro libraries in this [[https://github.com/ThoughtWorksInc/feature.scala feature.scala]] project,
+  *       although it may also useful for other projects.
+  *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val universe: Universe) {
