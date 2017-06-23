@@ -54,7 +54,7 @@ import scala.reflect.macros.blackbox
   * }
   * }}}
   *
-  * The users of only need a very simple implementation for their custom binary operators.
+  * The users only need a very simple implementation for their custom binary operators.
   *
   * {{{
   * import Ast._
