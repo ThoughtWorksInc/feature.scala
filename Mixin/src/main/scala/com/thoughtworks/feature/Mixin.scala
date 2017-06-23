@@ -1,7 +1,25 @@
 package com.thoughtworks.feature
 import shapeless._
 
-trait Mixin[SuperTypes <: HList] {
+/** A type class that converts a [[shapeless.HList]] to a mix-in type.
+  *
+  *
+  * == Common imports ==
+  *
+  * You may want to use [[Mixin]] with [[shapeless.HList]].
+  *
+  * {{{
+  * import shapeless._
+  * }}}
+  *
+  * @example [[Out]] of [[Mixin]] is a minx-in type that consists of each types in `L`
+  *
+  *          {{{
+  *          val mixin = Mixin[Int :: Nil.type :: String :: HNil]
+  *          "implicitly[mixin.Out =:= (Int :: Nil.type :: Int with String)]" should compile
+  *          }}}
+  */
+trait Mixin[L <: HList] {
   type Out
 }
 

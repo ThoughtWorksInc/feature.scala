@@ -12,7 +12,6 @@ import scala.reflect.macros.whitebox
   *
   * {{{
   * import shapeless._
-  * import org.scalatest.Matchers._
   * }}}
   *
   * @example [[Out]] of [[Demixin]] on non-mixed-in types other than [[scala.Any]] should be a [[shapeless.HList]] that contains only one element
