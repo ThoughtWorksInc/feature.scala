@@ -219,14 +219,13 @@ object Factory {
             }
             """
           } else {
-            val argumentTrees = methodType.paramLists.map(_.map {
-              argumentSymbol =>
-                if (argumentSymbol.asTerm.isImplicit) {
-                  q"implicit val ${argumentSymbol.name.toTermName}: ${untyper
-                    .untype(argumentSymbol.info)}"
-                } else {
-                  q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
-                }
+            val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
+              if (argumentSymbol.asTerm.isImplicit) {
+                q"implicit val ${argumentSymbol.name.toTermName}: ${untyper
+                  .untype(argumentSymbol.info)}"
+              } else {
+                q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
+              }
             })
             q"""
             $modifiers def $methodName[..${methodType.typeArgs}](...$argumentTrees) = {
@@ -275,9 +274,8 @@ object Factory {
           val functionTypeTree = if (argumentTypeTrees.isEmpty) {
             tq"${definitions.ByNameParamClass}[$resultTypeTree]"
           } else {
-            argumentTypeTrees.foldRight(resultTypeTree) {
-              (arguments, result) =>
-                tq"..$arguments => $result"
+            argumentTypeTrees.foldRight(resultTypeTree) { (arguments, result) =>
+              tq"..$arguments => $result"
             }
           }
           (q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = $argumentName",
@@ -289,10 +287,10 @@ object Factory {
       val (defProxies, valProxies) = proxies.partition(_.isDef)
       val overridenTypes =
         (for {
-          baseClass <- output.baseClasses.reverse
-          member <- baseClass.info.decls
+          componentType <- componentTypes
+          member <- componentType.members
           if member.isType
-        } yield member)
+        } yield member).distinct
           .groupBy(_.name.toString)
           .withFilter {
             _._2.forall {
@@ -304,16 +302,15 @@ object Factory {
           }
           .map {
             case (name, members) =>
-              val lowerBounds = members.collect(
-                scala.Function.unlift[Symbol, Tree] { memberSymbol =>
-                  val TypeBounds(_, lowerBound) = memberSymbol.info
-                  if (lowerBound =:= definitions.AnyTpe) {
-                    None
-                  } else {
-                    val untyper = new OverrideUntyper(memberSymbol.owner)
-                    Some(untyper.untype(lowerBound))
-                  }
-                })
+              val lowerBounds: List[Tree] = members.collect(scala.Function.unlift[Symbol, Tree] { memberSymbol =>
+                val TypeBounds(_, lowerBound) = memberSymbol.info
+                if (lowerBound =:= definitions.AnyTpe) {
+                  None
+                } else {
+                  val untyper = new OverrideUntyper(memberSymbol.owner)
+                  Some(untyper.untype(lowerBound))
+                }
+              })(collection.breakOut(List.canBuildFrom))
               val typeTree = if (lowerBounds.isEmpty) {
                 TypeTree(definitions.AnyTpe)
               } else {
