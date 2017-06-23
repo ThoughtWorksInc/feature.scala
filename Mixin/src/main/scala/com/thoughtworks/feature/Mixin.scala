@@ -16,7 +16,7 @@ import shapeless._
   *
   *          {{{
   *          val mixin = Mixin[Int :: Nil.type :: String :: HNil]
-  *          "implicitly[mixin.Out =:= (Int :: Nil.type :: Int with String)]" should compile
+  *          "implicitly[mixin.Out =:= (Int with Nil.type with String)]" should compile
   *          }}}
   */
 trait Mixin[L <: HList] {

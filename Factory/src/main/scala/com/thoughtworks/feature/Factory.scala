@@ -8,9 +8,10 @@ import scala.annotation.{StaticAnnotation, compileTimeOnly}
 
 /** A factory to create new instances, especially dynamic mix-ins.
   *
-  * @note The factory may contain abstract parameters of abstract types
+  * @note Factories may be nested
   *
   *       {{{
+  *       import com.thoughtworks.feature.Factory.inject
   *       trait Outer {
   *         trait AbstractParameterApi
   *         type AbstractParameter <: AbstractParameterApi
@@ -19,43 +20,22 @@ import scala.annotation.{StaticAnnotation, compileTimeOnly}
   *           def foo: AbstractParameter
   *         }
   *         type Inner <: InnerApi
+  *
+  *         @inject val innerFactory: Factory[Inner]
   *       }
   *
-  *       new Outer {
-  *         type Inner = InnerApi
-  *         val innerFactory = Factory[Inner]
-  *       }
+  *       Factory[Outer]
   *       }}}
   *
-  * @example Given a trait that contains an **implicit** abstract method annotated as [[Factory.inject @inject]].
+  * @note [[Factory.inject @inject]] works on implicit abstract methods as well.
   *
-  *          {{{
-  *          import com.thoughtworks.feature.Factory.inject
-  *          trait Foo[A] {
-  *            @inject implicit def orderingA: Ordering[A]
-  *          }
-  *          }}}
-  *
-  *          When creating a factory for the trait
-  *
-  *          {{{
-  *          val factory = Factory[Foo[Int]]
-  *          }}}
-  *
-  *          Then the `@inject` method will be replaced to an implicit value.
-  *
-  *          {{{
-  *          val foo = factory.newInstance()
-  *          foo.orderingA should be(implicitly[Ordering[Int]])
-  *          }}}
-  *
-  *          It will not compile if no implicit value found.
-  *
-  *          For example, `Foo[Symbol]` requires an implicit value of type `Ordering[Symbol]`, which is not availble.
-  *
-  *          {{{
-  *          "Factory[Foo[Symbol]]" shouldNot compile
-  *          }}}
+  *       {{{
+  *       import com.thoughtworks.feature.Factory.inject
+  *       trait Foo[A] {
+  *         @inject implicit def orderingA: Ordering[A]
+  *       }
+  *       Factory[Foo[Int]].newInstance().orderingA should be(implicitly[Ordering[Int]])
+  *       }}}
   *
   * @example Given a trait that contains an abstract method annotated as [[Factory.inject @inject]].
   *
