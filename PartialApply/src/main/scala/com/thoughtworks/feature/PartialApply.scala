@@ -88,7 +88,7 @@ import scala.util.control.NonFatal
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-trait PartialApply[F, ParameterName <: String with Singleton] {
+trait PartialApply[F, ParameterName <: String with Singleton] extends Serializable {
   type Parameter
   type Rest
 

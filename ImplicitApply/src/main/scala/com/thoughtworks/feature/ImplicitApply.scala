@@ -74,7 +74,7 @@ import scala.util.control.NonFatal
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 @typeclass
-trait ImplicitApply[F] {
+trait ImplicitApply[F] extends Serializable {
   type Out
 
   @op("implicitApply")

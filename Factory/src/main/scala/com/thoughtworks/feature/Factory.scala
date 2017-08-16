@@ -107,7 +107,7 @@ import scala.annotation.{StaticAnnotation, compileTimeOnly}
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
-trait Factory[Output] {
+trait Factory[Output] extends Serializable {
 
   /** A function type that returns `Output`.
     *
