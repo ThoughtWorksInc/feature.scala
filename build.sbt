@@ -69,6 +69,13 @@ lazy val ByName = crossProject.crossType(CrossType.Pure)
 lazy val ByNameJVM = ByName.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val ByNameJS = ByName.js.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val `mixins-ImplicitsSingleton` = crossProject.crossType(CrossType.Pure).dependsOn(Factory, ImplicitApply)
+
+lazy val `mixins-ImplicitsSingletonJVM` = `mixins-ImplicitsSingleton`.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val `mixins-ImplicitsSingletonJS` = `mixins-ImplicitsSingleton`.js.addSbtFiles(file("../build.sbt.shared"))
+
 lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
   .settings(
