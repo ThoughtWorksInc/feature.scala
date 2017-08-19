@@ -6,6 +6,11 @@ import scala.language.implicitConversions
 
 /** A type class for convert between by-name type and normal by-value type.
   *
+  * == Installation ==
+  * `<pre>
+  * libraryDependencies += "com.thoughtworks.feature" %% "byname" % "latest.release"
+  * </pre>`
+  *
   * This [[ByName]] type class provide an extension method [[extract]] for [[ByName.=>]] types via implicit view,
   * which can be import as follow:
   * {{{
