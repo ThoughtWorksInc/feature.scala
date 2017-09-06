@@ -89,20 +89,22 @@ import scala.annotation.{StaticAnnotation, compileTimeOnly}
   *          fooBar should be(a[Bar])
   *          }}}
   *
-  * @example Given a trait that has an abstract member.
+  * @example Given a trait that has abstract members.
   *          {{{
   *          trait Foo {
-  *            var bar: Int
+  *            val bar: Int
+  *            var baz: Long
   *          }
   *          }}}
   *          When creating a factory for the trait.
   *          {{{
   *          val factory = Factory[Foo]
   *          }}}
-  *          Then the [[newInstance]] method of the factory should accept one parameter.
+  *          Then the [[newInstance]] method of the factory should accept parameters according to abstract members.
   *          {{{
-  *          val foo: Foo = factory.newInstance(bar = 1)
+  *          val foo: Foo = factory.newInstance(bar = 1, baz = 2L)
   *          foo.bar should be(1)
+  *          foo.baz should be(2L)
   *          }}}
   *
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
