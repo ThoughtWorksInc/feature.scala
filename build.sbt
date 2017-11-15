@@ -92,6 +92,7 @@ lazy val unidoc = project
                  FactoryJVM,
                  PartialApplyJVM,
                  ImplicitApplyJVM,
-                 ByNameJVM)
+                 ByNameJVM,
+                 `mixins-ImplicitsSingletonJVM`)
     }
   )
