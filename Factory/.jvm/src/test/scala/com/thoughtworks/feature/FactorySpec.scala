@@ -1,5 +1,6 @@
 package com.thoughtworks.feature
 
+import com.thoughtworks.feature.Factory.inject
 import org.scalatest.{FreeSpec, Matchers}
 
 /**
@@ -8,11 +9,18 @@ import org.scalatest.{FreeSpec, Matchers}
 class FactorySpec extends FreeSpec with Matchers {
 
   "It should automatically include self-types" in {
-    trait A
+    trait A {
+      def intValue: Int
+      @inject
+      val intOrdering: Ordering[Int]
+    }
     trait B { this: A =>
+      val stringValue: String
+      @inject
+      def floatOrdering: Ordering[Float]
     }
 
-    val ab = Factory[B].newInstance()
+    val ab = Factory[B].newInstance(intValue = 42, stringValue = "foo")
     ab should be(a[A])
     ab should be(a[B])
   }

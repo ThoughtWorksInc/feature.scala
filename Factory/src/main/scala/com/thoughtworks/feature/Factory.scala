@@ -177,7 +177,14 @@ object Factory {
     def apply[Output: WeakTypeTag]: Tree = {
       val output = weakTypeOf[Output]
 
-      val componentTypes = demixin(output)
+      val componentTypes = demixin(output).toList
+
+      val linearOutput = componentTypes match {
+        case head :: Nil =>
+          head
+        case _ =>
+          internal.refinedType(componentTypes, c.internal.enclosingOwner)
+      }
 
       val mixinClassName = TypeName(c.freshName("Anonymous"))
 
@@ -195,7 +202,7 @@ object Factory {
             case tpe @ TypeRef(NoPrefix, s, superUntype.extract.forall(typeArguments)) =>
               tq"${super.untype(internal
                 .typeRef(NoPrefix, s, Nil)
-                .asSeenFrom(output, baseClass))}[..$typeArguments]"
+                .asSeenFrom(linearOutput, baseClass))}[..$typeArguments]"
           }
         }
 
@@ -204,7 +211,7 @@ object Factory {
         }
       }
       val injectedNames = (for {
-        baseClass <- output.baseClasses.reverse
+        baseClass <- linearOutput.baseClasses.reverse
         member <- baseClass.info.decls
         if member.isTerm && {
           internal.initialize(member)
@@ -218,7 +225,7 @@ object Factory {
         injectedName <- injectedNames
       } yield {
         val methodName = injectedName.toTermName
-        val memberSymbol = output.member(methodName).asTerm
+        val memberSymbol = linearOutput.member(methodName).asTerm
         val methodType = memberSymbol.info
         val untyper = new OverrideUntyper(memberSymbol.owner)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
@@ -262,13 +269,13 @@ object Factory {
         result
       }
       val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = (for {
-        member <- output.members
+        member <- linearOutput.members
         if !injectedNames(member.name) && member.isTerm && member.isAbstract && !member.asTerm.isSetter
       } yield {
         val memberSymbol = member.asTerm
         val methodName = memberSymbol.name.toTermName
         val argumentName = TermName(c.freshName(methodName.toString))
-        val methodType = memberSymbol.infoIn(output)
+        val methodType = memberSymbol.infoIn(linearOutput)
         val untyper = new OverrideUntyper(member.owner)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
