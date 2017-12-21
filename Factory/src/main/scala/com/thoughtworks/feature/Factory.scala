@@ -143,19 +143,41 @@ object Factory {
         }
     }
     private def demixin(t: Type): Stream[Type] = {
-      t.dealias match {
-        case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
-          superTypes.toStream.flatMap(demixin)
-        case notRefinedType =>
-          Stream(notRefinedType)
+      val parts = scala.collection.mutable.HashSet.empty[Type]
+      def go(t: Type, ignoreNonClassType: Boolean): Stream[Type] = {
+        val dealiased = t.dealias
+        if (parts(dealiased)) {
+          Stream.empty
+        } else {
+          parts += dealiased
+          dealiased match {
+            case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
+              superTypes.toStream.flatMap(go(_, ignoreNonClassType = true))
+            case typeRef: TypeRef =>
+              val symbol = dealiased.typeSymbol
+              if (symbol.isClass) {
+                val selfType = symbol.asClass.selfType.asSeenFrom(dealiased, symbol)
+                go(selfType, true) :+ dealiased
+              } else {
+                Stream.empty
+              }
+            case _ =>
+              if (ignoreNonClassType) {
+                Stream.empty
+              } else {
+                Stream(dealiased)
+              }
+          }
+        }
       }
+      go(t, ignoreNonClassType = false)
     }
     private val injectType = typeOf[inject]
 
     def apply[Output: WeakTypeTag]: Tree = {
       val output = weakTypeOf[Output]
 
-      val componentTypes = demixin(output).distinct
+      val componentTypes = demixin(output)
 
       val mixinClassName = TypeName(c.freshName("Anonymous"))
 
@@ -298,7 +320,7 @@ object Factory {
             _._2.forall {
               _.info match {
                 case TypeBounds(_, _) => true
-                case _ => false
+                case _                => false
               }
             }
           }
