@@ -1,0 +1,13 @@
+enablePlugins(Example)
+
+// addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+
+// scalacOptions += "-Yliteral-types"
+
+// scalacOptions += "-Ypartial-unification"
+
+// libraryDependencies += "org.scalamock" %%% "scalamock-scalatest-support" % "3.6.0" % Test
+
+// exampleSuperTypes += "org.scalamock.scalatest.MockFactory"
+
+libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.value % Provided

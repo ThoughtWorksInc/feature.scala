@@ -70,6 +70,12 @@ lazy val ByNameJVM = ByName.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val ByNameJS = ByName.js.addSbtFiles(file("../build.sbt.shared"))
 
+lazy val SelfType = crossProject.crossType(CrossType.Pure)
+
+lazy val SelfTypeJVM = SelfType.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val SelfTypeJS = SelfType.js.addSbtFiles(file("../build.sbt.shared"))
+
 lazy val `mixins-ImplicitsSingleton` = crossProject.crossType(CrossType.Pure).dependsOn(Factory, ImplicitApply)
 
 lazy val `mixins-ImplicitsSingletonJVM` = `mixins-ImplicitsSingleton`.jvm.addSbtFiles(file("../build.sbt.shared"))
@@ -83,16 +89,19 @@ lazy val unidoc = project
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch),
     UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
-      inProjects(UntyperJVM,
-                 MixinJVM,
-                 DemixinJVM,
-                 ConstructorJVM,
-                 CallerJVM,
-                 TheJVM,
-                 FactoryJVM,
-                 PartialApplyJVM,
-                 ImplicitApplyJVM,
-                 ByNameJVM,
-                 `mixins-ImplicitsSingletonJVM`)
+      inProjects(
+        UntyperJVM,
+        MixinJVM,
+        DemixinJVM,
+        ConstructorJVM,
+        CallerJVM,
+        TheJVM,
+        FactoryJVM,
+        PartialApplyJVM,
+        ImplicitApplyJVM,
+        ByNameJVM,
+        `mixins-ImplicitsSingletonJVM`,
+        SelfTypeJVM
+      )
     }
   )
