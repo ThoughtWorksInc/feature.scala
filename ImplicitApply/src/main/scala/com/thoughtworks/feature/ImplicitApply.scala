@@ -16,7 +16,7 @@ import scala.util.control.NonFatal
   * import com.thoughtworks.feature.ImplicitApply.ops._
   * }}}
   *
-  * This will enable the [[com.thoughtworks.feature.ImplicitApply.ImplicitApplyOps.implicitApply implicitApply]] method for any functions
+  * This will enable the [[com.thoughtworks.feature.ImplicitApply.Ops.implicitApply implicitApply]] method for any functions
   *
   * @tparam F The function type to be implicitly invoked
   *
