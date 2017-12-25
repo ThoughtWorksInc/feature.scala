@@ -25,7 +25,7 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
       q"$pre.$sym"
     case SuperType(singletonValue.extract(thisValue), ThisType(superSymbol)) =>
       Super(thisValue, superSymbol.name.toTypeName)
-    case SingleType(untype.extract(pre), sym) =>
+    case SingleType(untypeOption.extract(pre), sym) =>
       SelectFromTypeTree(pre, sym.name.toTypeName)
   }
 
@@ -37,49 +37,50 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
     case symbol if symbol.isType => symbol.asType
   }
 
-  def typeDefinitionSymbol: PartialFunction[TypeSymbol, (TypeName, Seq[Symbol], Type)] = {
+  def typeDefinitionSymbol(implicit tpe: Type): PartialFunction[TypeSymbol, (TypeName, Seq[Symbol], Type)] = {
     case symbol if !symbol.isClass =>
-      val info = symbol.info
+      val info = symbol.infoIn(tpe)
       (symbol.name.toTypeName, info.typeParams, info.resultType)
   }
 
-  def varDefinitionSymbol: PartialFunction[TermSymbol, (TermName, Type)] = {
+  def varDefinitionSymbol(implicit tpe: Type): PartialFunction[TermSymbol, (TermName, Type)] = {
     case symbol if symbol.isVar =>
-      (symbol.name.toTermName, symbol.info.resultType)
+      (symbol.name.toTermName, symbol.infoIn(tpe).resultType)
   }
-  def valDefinitionSymbol: PartialFunction[TermSymbol, (TermName, Type)] = {
+  def valDefinitionSymbol(implicit tpe: Type): PartialFunction[TermSymbol, (TermName, Type)] = {
     case symbol if symbol.isVal || symbol.isStable =>
-      (symbol.name.toTermName, symbol.info.resultType)
+      (symbol.name.toTermName, symbol.infoIn(tpe).resultType)
   }
 
-  def defDefinitionSymbol: PartialFunction[TermSymbol, (TermName, Seq[Symbol], Seq[Seq[Symbol]], Type)] = {
+  def defDefinitionSymbol(
+      implicit tpe: Type): PartialFunction[TermSymbol, (TermName, Seq[Symbol], Seq[Seq[Symbol]], Type)] = {
     case symbol if symbol.isMethod =>
-      val info = symbol.info
+      val info = symbol.infoIn(tpe)
       (symbol.name.toTermName, info.typeParams, info.paramLists, info.finalResultType)
 
   }
 
-  def typeDefinition: PartialFunction[TypeSymbol, TypeDef] = {
+  def typeDefinition(implicit tpe: Type): PartialFunction[TypeSymbol, TypeDef] = {
     case typeSymbol.extract(
         typeDefinitionSymbol.extract(name,
                                      typeDefinition.extract.forall(params),
-                                     TypeBounds(untype.extract(upper), untype.extract(lower)))) =>
+                                     TypeBounds(untypeOption.extract(upper), untypeOption.extract(lower)))) =>
       q"type $name[..$params] >: $upper <: $lower"
     case typeSymbol.extract(
         typeDefinitionSymbol
-          .extract(name, typeDefinition.extract.forall(params: Seq[TypeDef]), untype.extract(concreteType))) =>
+          .extract(name, typeDefinition.extract.forall(params: Seq[TypeDef]), untypeOption.extract(concreteType))) =>
       q"type $name[..$params] = $concreteType"
   }
 
-  def definition: PartialFunction[Symbol, Tree] = {
+  def definition(implicit tpe: Type): PartialFunction[Symbol, Tree] = {
     case typeDefinition.extract(typeDef) => typeDef
     case termDefinition.extract(termDef) => termDef
   }
 
-  def termDefinition: PartialFunction[Symbol, Tree] = {
-    case termSymbol.extract(varDefinitionSymbol.extract(name, untype.extract(result))) =>
+  def termDefinition(implicit tpe: Type): PartialFunction[Symbol, Tree] = {
+    case termSymbol.extract(varDefinitionSymbol.extract(name, untypeOption.extract(result))) =>
       q"var $name: $result"
-    case termSymbol.extract(symbol @ valDefinitionSymbol.extract(name, untype.extract(result))) =>
+    case termSymbol.extract(symbol @ valDefinitionSymbol.extract(name, untypeOption.extract(result))) =>
       if (symbol.isImplicit) {
         q"implicit val $name: $result"
       } else {
@@ -89,33 +90,40 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
         defDefinitionSymbol.extract(name,
                                     typeDefinition.extract.forall(typeParams),
                                     termDefinition.extract.forall.forall(params),
-                                    untype.extract(result))) =>
+                                    untypeOption.extract(result))) =>
       q"def $name[..$typeParams](...$params): $result"
   }
 
-  def untype: PartialFunction[Type, Tree] = {
-    case ConstantType(value) =>
-      Literal(value)
-    case singletonValue.extract(value) =>
-      tq"$value.type"
-    case TypeRef(NoPrefix, sym, args) =>
-      tq"${sym.name.toTypeName}[..${args.map(untype)}]"
-    case TypeRef(pre, sym, args) if pre.typeSymbol.isPackage =>
-      tq"$sym[..${args.map(untype)}]"
-    case TypeRef(singletonValue.extract(pre), sym, args) =>
-      tq"$pre.$sym[..${args.map(untype)}]"
-    case TypeRef(untype.extract(pre), sym, args) =>
-      tq"$pre#$sym[..${args.map(untype)}]"
-    case RefinedType(untype.extract.forall(parents), decls) =>
-      CompoundTypeTree(Template(parents.toList, noSelfType, decls.view.map(definition).toList))
-    case PolyType(typeSymbol.extract.forall(typeDefinition.extract.forall(typeParams)), untype.extract(resultType)) =>
-      tq"({type Λ$$[..$typeParams] = $resultType})#Λ$$"
-    case ExistentialType(definition.extract.forall(quantified), untype.extract(underlying)) =>
-      tq"$underlying forSome { ..$quantified }"
-    case AnnotatedType(annotations, untype.extract(underlying)) =>
-      annotations.foldLeft(underlying) { (tree, annotation) =>
-        Annotated(annotation.tree, tree)
-      }
+  def untypeOption: Type => Option[Tree] = { implicit tpe: Type =>
+    tpe match {
+      case ConstantType(value) =>
+        Some(Literal(value))
+      case singletonValue.extract(value) =>
+        Some(tq"$value.type")
+      case TypeRef(NoPrefix, sym, args) =>
+        Some(tq"${sym.name.toTypeName}[..${args.map(untype)}]")
+      case TypeRef(pre, sym, args) if pre.typeSymbol.isPackage =>
+        Some(tq"$sym[..${args.map(untype)}]")
+      case TypeRef(singletonValue.extract(pre), sym, args) =>
+        Some(tq"$pre.$sym[..${args.map(untype)}]")
+      case TypeRef(untypeOption.extract(pre), sym, args) =>
+        Some(tq"$pre#$sym[..${args.map(untype)}]")
+      case RefinedType(untypeOption.extract.forall(parents), decls) =>
+        Some(CompoundTypeTree(Template(parents.toList, noSelfType, decls.view.map(definition).toList)))
+      case PolyType(typeSymbol.extract.forall(typeDefinition.extract.forall(typeParams)), untypeOption.extract(resultType)) =>
+        Some(tq"({type Λ$$[..$typeParams] = $resultType})#Λ$$")
+      case ExistentialType(definition.extract.forall(quantified), untypeOption.extract(underlying)) =>
+        Some(tq"$underlying forSome { ..$quantified }")
+      case AnnotatedType(annotations, untypeOption.extract(underlying)) =>
+        Some(annotations.foldLeft(underlying) { (tree, annotation) =>
+          Annotated(annotation.tree, tree)
+        })
+      case _ =>
+        None
+    }
+
   }
+
+  def untype: PartialFunction[Type, Tree] = scala.Function.unlift(untypeOption)
 
 }
