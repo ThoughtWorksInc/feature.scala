@@ -76,6 +76,12 @@ lazy val SelfTypeJVM = SelfType.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val SelfTypeJS = SelfType.js.addSbtFiles(file("../build.sbt.shared"))
 
+lazy val Structural = crossProject.crossType(CrossType.Pure).dependsOn(Untyper)
+
+lazy val StructuralJVM = Structural.jvm.addSbtFiles(file("../build.sbt.shared"))
+
+lazy val StructuralJS = Structural.js.addSbtFiles(file("../build.sbt.shared"))
+
 lazy val `mixins-ImplicitsSingleton` = crossProject.crossType(CrossType.Pure).dependsOn(Factory, ImplicitApply)
 
 lazy val `mixins-ImplicitsSingletonJVM` = `mixins-ImplicitsSingleton`.jvm.addSbtFiles(file("../build.sbt.shared"))
@@ -101,7 +107,8 @@ lazy val unidoc = project
         ImplicitApplyJVM,
         ByNameJVM,
         `mixins-ImplicitsSingletonJVM`,
-        SelfTypeJVM
+        SelfTypeJVM,
+        StructuralJVM
       )
     }
   )
