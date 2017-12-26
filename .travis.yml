@@ -19,7 +19,7 @@ before_deploy:
 
 deploy:
   provider: script
-  script: sbt "release with-defaults"
+  script: sbt "release with-defaults skip-tests"
   on:
     condition: -e ./deploy.sbt
     all_branches: true
