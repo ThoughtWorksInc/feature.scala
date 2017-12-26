@@ -86,14 +86,14 @@ object Structural {
     type Out = Any
   }
 
-  implicit def materialize[Mixin]: Structural[Mixin] = macro Macros.apply[Mixin]
+  implicit def materialize[Mixin]: Structural[Mixin] = macro Macros.materialize[Mixin]
 
   private[Structural] final class Macros(val c: whitebox.Context) {
 
     import c.universe._
     import definitions._
 
-    def apply[Mixin: WeakTypeTag]: Tree = {
+    def materialize[Mixin: WeakTypeTag]: Tree = {
       val mixin = weakTypeOf[Mixin]
       val mixinSymbol = mixin.typeSymbol
       val untyper = new Untyper[c.universe.type](c.universe) {
