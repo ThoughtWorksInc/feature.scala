@@ -57,12 +57,14 @@ import scala.reflect.ClassTag
   *          When converting it to a structural type
   *
   *          {{{
+  *          import scala.language.higherKinds
   *          val myStruct = container.structuralize
   *          }}}
   *
   *          Then methods on the converted struct should be able to access via reflective call
   *
   *          {{{
+  *          import scala.language.reflectiveCalls
   *          myStruct.self should be(myStruct)
   *          }}}
   *
