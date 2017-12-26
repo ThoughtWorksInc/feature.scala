@@ -45,8 +45,11 @@ import scala.reflect.ClassTag
   *
   *          {{{
   *          trait Container extends Iterable[String] {
-  *            type Xxx >: Iterable[String]
-  *            def self: Xxx = this
+  *            trait InnerApi
+  *            type Inner <: InnerApi
+  *            def inner: Inner = ???
+  *            type Self0 >: this.type
+  *            def self: Self0 = this
   *          }
   *          val container: Container = new Container { def iterator = Iterator.empty }
   *          }}}
@@ -101,47 +104,61 @@ object Structural {
         override def singletonValue: PartialFunction[Type, Tree] = {
           replaceThisValue.orElse(super.singletonValue)
         }
+
+        private def typeDefinitionOption(symbol: TypeSymbol)(implicit tpe: Type): Option[TypeDef] = {
+          if (symbol.isClass) {
+            Some(q"type ${symbol.name}[..${symbol.typeParams.map { typeArgument =>
+              super.typeDefinition.apply(typeArgument.asType)
+            }}]")
+          } else {
+            None
+          }
+        }
+
+        override def typeDefinition(implicit tpe: Type): PartialFunction[TypeSymbol, TypeDef] = {
+          super.typeDefinition.orElse(scala.Function.unlift(typeDefinitionOption))
+        }
+
       }
       val mixinThis = internal.thisType(mixinSymbol)
 
-      val scopeBuilder = List.newBuilder[Scope]
-      val superTypeListBuilder = List.newBuilder[Type]
-      val anyTypeList = definitions.AnyTpe :: Nil
+      val treeBuilder = List.newBuilder[Tree]
 
-      def buildDuckList(t: Type): Unit = {
+      def buildComponentList(t: Type): Unit = {
         val dealiased = t.dealias
         dealiased match {
           case RefinedType(superTypes, refinedScope) =>
-            superTypes.foreach(buildDuckList)
-            scopeBuilder += refinedScope
+            superTypes.foreach(buildComponentList)
+            treeBuilder += tq"$dealiased"
           case _ =>
-            superTypeListBuilder += dealiased
-            scopeBuilder += dealiased.members
+            val scope = dealiased.members
+            val refinements = for {
+              symbol <- scope
+              if symbol.isPublic && !symbol.isConstructor && (symbol.owner match {
+                case owner if owner == AnyClass || owner == AnyRefClass || owner == ObjectClass =>
+                  false
+                case _ =>
+                  true
+              })
+            } yield {
+              untyper.definition(mixinThis)(symbol)
+            }
+
+            val base = if (dealiased <:< AnyRefTpe) {
+              AnyRefTpe
+            } else {
+              AnyTpe
+            }
+
+            treeBuilder += tq"$base { ..$refinements }"
+
         }
       }
 
-      buildDuckList(mixin)
-      val superTypes: List[Type] = superTypeListBuilder.result()
-      val scopes = scopeBuilder.result()
-      val out = scopes
-        .map { scope =>
-          val refinements = for {
-            symbol <- scope
-            if symbol.isPublic && !symbol.isConstructor && (symbol.owner match {
-              case owner if owner == AnyClass || owner == AnyRefClass || owner == ObjectClass =>
-                false
-              case _ =>
-                true
-            }) && !symbol.isClass
-          } yield {
-            untyper.definition(mixinThis)(symbol)
-          }
-
-          tq"Any { ..$refinements }"
-        }
-        .reduce { (a, b) =>
-          tq"$a with $b"
-        }
+      buildComponentList(mixin)
+      val out = treeBuilder.result().reduce { (a, b) =>
+        tq"$a with $b"
+      }
       q"""_root_.com.thoughtworks.feature.Structural.typeClassCache.asInstanceOf[
         _root_.com.thoughtworks.feature.Structural.Aux[$mixin, $out]
       ]"""

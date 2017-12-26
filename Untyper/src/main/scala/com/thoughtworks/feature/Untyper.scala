@@ -60,27 +60,22 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
 
   }
 
-  def typeDefinitionOption(symbol: Symbol)(implicit tpe: Type): Option[TypeDef] = {
-    if (symbol.isType) {
-      symbol.asType match {
-        case typeDefinitionSymbol.extract(name,
-                                          typeDefinition.extract.forall(params),
-                                          TypeBounds(untypeOption.extract(upper), untypeOption.extract(lower))) =>
-          Some(TypeDef(Modifiers(Flag.PARAM), name, params.toList, TypeBoundsTree(upper, lower)))
-        case typeDefinitionSymbol
-              .extract(name, typeDefinition.extract.forall(params: Seq[TypeDef]), untypeOption.extract(concreteType)) =>
-          Some(q"type $name[..$params] = $concreteType")
-        case classSymbol =>
-          Some(???)
-      }
-    } else {
-      None
+  private def typeDefinitionOption(symbol: TypeSymbol)(implicit tpe: Type): Option[TypeDef] = {
+    symbol match {
+      case typeDefinitionSymbol.extract(name,
+                                        typeDefinition.extract.forall(params),
+                                        TypeBounds(untypeOption.extract(upper), untypeOption.extract(lower))) =>
+        Some(TypeDef(Modifiers(Flag.PARAM), name, params.toList, TypeBoundsTree(upper, lower)))
+      case typeDefinitionSymbol
+            .extract(name, typeDefinition.extract.forall(params: Seq[TypeDef]), untypeOption.extract(concreteType)) =>
+        Some(q"type $name[..$params] = $concreteType")
+      case _ =>
+        None
     }
   }
 
   def typeDefinition(implicit tpe: Type): PartialFunction[TypeSymbol, TypeDef] = {
     scala.Function.unlift(typeDefinitionOption)
-
   }
 
   def definition(implicit tpe: Type): PartialFunction[Symbol, Tree] = {
