@@ -179,35 +179,19 @@ object Factory {
 
       val componentTypes = demixin(output).toList
 
-      val linearOutput = componentTypes match {
-        case head :: Nil =>
-          head
-        case _ =>
-          internal.refinedType(componentTypes, c.internal.enclosingOwner)
-      }
+      val linearOutput = internal.refinedType(componentTypes, c.internal.enclosingOwner)
+      val linearSymbol = linearOutput.typeSymbol
+      val linearThis = internal.thisType(linearSymbol)
 
       val mixinClassName = TypeName(c.freshName("Anonymous"))
 
-      final class OverrideUntyper(baseClass: Symbol) extends Untyper[c.universe.type](c.universe) {
+      final class OverrideUntyper extends Untyper[c.universe.type](c.universe) {
         private def replaceThisValue: PartialFunction[Type, Tree] = {
-          case tt @ ThisType(symbol) if symbol == baseClass =>
+          case tt @ ThisType(symbol) if symbol == linearSymbol =>
             This(mixinClassName)
         }
         override def singletonValue: PartialFunction[Type, Tree] = {
           replaceThisValue.orElse(super.singletonValue)
-        }
-        private def replaceTypeArguments: PartialFunction[Type, Tree] = {
-          def superUntype = super.untype;
-          {
-            case tpe @ TypeRef(NoPrefix, s, superUntype.extract.forall(typeArguments)) =>
-              tq"${super.untype(internal
-                .typeRef(NoPrefix, s, Nil)
-                .asSeenFrom(linearOutput, baseClass))}[..$typeArguments]"
-          }
-        }
-
-        override def untype: PartialFunction[Type, Tree] = {
-          replaceTypeArguments.orElse(super.untype)
         }
       }
       val injectedNames = (for {
@@ -226,8 +210,8 @@ object Factory {
       } yield {
         val methodName = injectedName.toTermName
         val memberSymbol = linearOutput.member(methodName).asTerm
-        val methodType = memberSymbol.info
-        val untyper = new OverrideUntyper(memberSymbol.owner)
+        val methodType = memberSymbol.infoIn(linearThis)
+        val untyper = new OverrideUntyper //(memberSymbol.owner)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
 
         val modifiers = Modifiers(
@@ -268,15 +252,16 @@ object Factory {
         //          c.info(c.enclosingPosition, show(result), true)
         result
       }
-      val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = (for {
+
+      val zippedProxies: Iterable[(Tree, Tree, Tree, Tree)] = for {
         member <- linearOutput.members
         if !injectedNames(member.name) && member.isTerm && member.isAbstract && !member.asTerm.isSetter
       } yield {
         val memberSymbol = member.asTerm
         val methodName = memberSymbol.name.toTermName
         val argumentName = TermName(c.freshName(methodName.toString))
-        val methodType = memberSymbol.infoIn(linearOutput)
-        val untyper = new OverrideUntyper(member.owner)
+        val methodType = memberSymbol.infoIn(linearThis)
+        val untyper = new OverrideUntyper //(member.owner)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
@@ -314,7 +299,9 @@ object Factory {
            q"val $argumentName: $functionTypeTree",
            q"val $methodName: $functionTypeTree")
         }
-      }).unzip4
+      }
+
+      val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = zippedProxies.unzip4
       val (defProxies, valProxies) = proxies.partition(_.isDef)
       val overridenTypes =
         (for {
@@ -334,11 +321,11 @@ object Factory {
           .map {
             case (name, members) =>
               val lowerBounds: List[Tree] = members.collect(scala.Function.unlift[Symbol, Tree] { memberSymbol =>
-                val TypeBounds(_, lowerBound) = memberSymbol.info
+                val TypeBounds(_, lowerBound) = memberSymbol.infoIn(linearThis)
                 if (lowerBound =:= definitions.AnyTpe) {
                   None
                 } else {
-                  val untyper = new OverrideUntyper(memberSymbol.owner)
+                  val untyper = new OverrideUntyper // (memberSymbol.owner)
                   Some(untyper.untype(lowerBound))
                 }
               })(collection.breakOut(List.canBuildFrom))
