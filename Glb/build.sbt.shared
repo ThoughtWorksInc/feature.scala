@@ -1,0 +1,7 @@
+enablePlugins(Example)
+
+libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.value % Provided
+
+libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.11.0"
+
+scalacOptions += "-Ypartial-unification"
