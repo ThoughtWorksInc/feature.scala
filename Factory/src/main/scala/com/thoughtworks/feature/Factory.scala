@@ -185,7 +185,7 @@ object Factory {
 
       val mixinClassName = TypeName(c.freshName("Anonymous"))
 
-      final class OverrideUntyper extends Untyper[c.universe.type](c.universe) {
+      def untyper = new Untyper[c.universe.type](c.universe) {
         private def replaceThisValue: PartialFunction[Type, Tree] = {
           case tt @ ThisType(symbol) if symbol == linearSymbol =>
             This(mixinClassName)
@@ -211,7 +211,6 @@ object Factory {
         val methodName = injectedName.toTermName
         val memberSymbol = linearOutput.member(methodName).asTerm
         val methodType = memberSymbol.infoIn(linearThis)
-        val untyper = new OverrideUntyper //(memberSymbol.owner)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
 
         val modifiers = Modifiers(
@@ -261,7 +260,6 @@ object Factory {
         val methodName = memberSymbol.name.toTermName
         val argumentName = TermName(c.freshName(methodName.toString))
         val methodType = memberSymbol.infoIn(linearThis)
-        val untyper = new OverrideUntyper //(member.owner)
         val resultTypeTree = untyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
@@ -325,7 +323,6 @@ object Factory {
                 if (lowerBound =:= definitions.AnyTpe) {
                   None
                 } else {
-                  val untyper = new OverrideUntyper // (memberSymbol.owner)
                   Some(untyper.untype(lowerBound))
                 }
               })(collection.breakOut(List.canBuildFrom))
