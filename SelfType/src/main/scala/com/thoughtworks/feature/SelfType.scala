@@ -18,21 +18,21 @@ import scala.language.experimental.macros
   *          "implicitly[selfType.Out =:= MyTrait]" should compile
   *          }}}
   *
-  * @example Given a trait with an explicit self-type declaration
+  * @example Given a trait with an explicit self-type declaration,
   *
   *          {{{
   *          trait MySelfType
   *          trait MyTrait { this: MySelfType => }
   *          }}}
   *
-  *          Then the self type should be itself
+  *          then the self type should be itself with the type of `this`.
   *
   *          {{{
   *          val selfType = SelfType[MyTrait]
   *          "implicitly[selfType.Out =:= (MySelfType with MyTrait)]" should compile
   *          }}}
   *
-  * @example Given a compound type
+  * @example Given a compound type,
   *
   *          {{{
   *          trait MySelfType1
@@ -48,14 +48,14 @@ import scala.language.experimental.macros
   *          }
   *          }}}
   *
-  *          Then the self type should be a compound type of each mix-in part
+  *          then the self type should be a compound type of each mix-in part,
   *
   *          {{{
   *          val selfType = SelfType[MyCompoundType]
   *          "implicitly[selfType.Out =:= (MySelfType1 with MySelfType3 with MyTrait1 with MyTrait2 with MyTrait3)]" should compile
   *          }}}
   *
-  *          And the self type should not contain the refinement statements
+  *          and the self type should not contain the refinement statements
   *
   *          {{{
   *          "implicitly[selfType.Out <:< { type MyRefinement = Int }]" shouldNot typeCheck
