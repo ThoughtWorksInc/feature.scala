@@ -376,18 +376,17 @@ object Factory {
             def apply(..$refinedTree): $refinedOutput
           }]($newInstance)
 
-      def $constructorMethod(..$parameterTrees) = {
-        final class $mixinClassName extends {
-          ..$overridenTypes
-          ..$valProxies
-        } with ..$componentTypes {
-          ..$defProxies
-          ..$injects
+        def $constructorMethod(..$parameterTrees) = {
+          final class $mixinClassName extends {
+            ..$overridenTypes
+            ..$valProxies
+          } with ..$componentTypes {
+            ..$defProxies
+            ..$injects
+          }
+          new $mixinClassName
         }
-        new $mixinClassName
-      }
-      val $newInstance = $constructorMethod _
-      $makeNew($newInstance)
+        $makeNew($constructorMethod _)
       """
       //      c.info(c.enclosingPosition, show(result), true)
       result
