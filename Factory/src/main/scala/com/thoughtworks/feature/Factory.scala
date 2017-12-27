@@ -107,6 +107,29 @@ import scala.annotation.{StaticAnnotation, compileTimeOnly}
   *          foo.baz should be(2L)
   *          }}}
   *
+  * @note This [[Factory]] disallows creating types that has an abstract member whose type depends on nested types
+  *
+  *       {{{
+  *       trait Outer {
+  *         trait Inner
+  *         val inner: Option[Inner]
+  *       }
+  *
+  *       "Factory.newInstance[Outer](inner = None)" shouldNot typeCheck
+  *       }}}
+  *
+  * @note However, if the nested type is an alias to another type outside of the type to create, then it is allowed
+  *
+  *       {{{
+  *       trait Outer {
+  *         type Inner = String
+  *         val inner: Option[Inner]
+  *       }
+  *
+  *       val outer: Outer = Factory[Outer].newInstance(inner = Some("my value"))
+  *       outer.inner should be(Some("my value"))
+  *       }}}
+
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 trait Factory[Output] extends Serializable {
@@ -285,8 +308,9 @@ object Factory {
                   q"val $argumentName: $argumentTypeTree"
                 }
                 (argumentTree, argumentTypeTree, Ident(argumentName))
-              }.unzip3)
-              .unzip3
+              }
+              trees.unzip3
+            }.unzip3
           val functionTypeTree = if (argumentTypeTrees.isEmpty) {
             tq"${definitions.ByNameParamClass}[$resultTypeTree]"
           } else {
