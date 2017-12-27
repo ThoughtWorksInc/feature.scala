@@ -112,7 +112,7 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
   }
 
   def untypeOption: Type => Option[Tree] = { implicit tpe: Type =>
-    tpe match {
+    tpe.dealias match {
       case ConstantType(value) =>
         Some(Literal(value))
       case singletonValue.extract(value) =>
