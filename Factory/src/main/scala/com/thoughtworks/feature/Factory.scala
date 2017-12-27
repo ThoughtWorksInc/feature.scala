@@ -211,7 +211,7 @@ object Factory {
       val linearSymbol = linearOutput.typeSymbol
       val linearThis = internal.thisType(linearSymbol)
 
-      val mixinClassName = c.freshName(c.internal.enclosingOwner.name.toTypeName)
+      val mixinClassName = c.freshName(c.internal.enclosingOwner.name.encodedName.toTypeName)
 
       def untyper = new Untyper[c.universe.type](c.universe) {
         private def replaceThisValue: PartialFunction[Type, Tree] = {
