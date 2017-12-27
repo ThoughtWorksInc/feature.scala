@@ -272,9 +272,11 @@ object Factory {
            q"val $argumentName: $resultTypeTree",
            q"val $methodName: $resultTypeTree")
         } else {
-          val (argumentTrees, argumentTypeTrees, argumentIdTrees) =
-            methodType.paramLists
-              .map(_.map { argumentSymbol =>
+          val (argumentTrees: List[List[ValDef]],
+               argumentTypeTrees: List[List[Tree]],
+               argumentIdTrees: List[List[Ident]]) =
+            methodType.paramLists.map { parameterList =>
+              val trees: List[(ValDef, Tree, Ident)] = parameterList.map { argumentSymbol =>
                 val argumentTypeTree = untyper.untype(argumentSymbol.info)
                 val argumentName = argumentSymbol.name.toTermName
                 val argumentTree = if (argumentSymbol.asTerm.isImplicit) {
