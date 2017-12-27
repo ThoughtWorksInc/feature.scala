@@ -234,7 +234,7 @@ object Factory {
         val methodName = injectedName.toTermName
         val memberSymbol = linearOutput.member(methodName).asTerm
         val methodType = memberSymbol.infoIn(linearThis)
-        val resultTypeTree = untyper.untype(methodType.finalResultType)
+        val resultTypeTree: Tree = untyper.untype(methodType.finalResultType)
 
         val modifiers = Modifiers(
           Flag.OVERRIDE |
@@ -283,7 +283,7 @@ object Factory {
         val methodName = memberSymbol.name.toTermName
         val argumentName = TermName(c.freshName(methodName.toString))
         val methodType = memberSymbol.infoIn(linearThis)
-        val resultTypeTree = untyper.untype(methodType.finalResultType)
+        val resultTypeTree: Tree = untyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
            resultTypeTree,
@@ -299,8 +299,8 @@ object Factory {
                argumentTypeTrees: List[List[Tree]],
                argumentIdTrees: List[List[Ident]]) =
             methodType.paramLists.map { parameterList =>
-              val trees: List[(ValDef, Tree, Ident)] = parameterList.map { argumentSymbol =>
-                val argumentTypeTree = untyper.untype(argumentSymbol.info)
+              parameterList.map { argumentSymbol =>
+                val argumentTypeTree: Tree = untyper.untype(argumentSymbol.info)
                 val argumentName = argumentSymbol.name.toTermName
                 val argumentTree = if (argumentSymbol.asTerm.isImplicit) {
                   q"implicit val $argumentName: $argumentTypeTree"
@@ -308,8 +308,7 @@ object Factory {
                   q"val $argumentName: $argumentTypeTree"
                 }
                 (argumentTree, argumentTypeTree, Ident(argumentName))
-              }
-              trees.unzip3
+              }.unzip3
             }.unzip3
           val functionTypeTree = if (argumentTypeTrees.isEmpty) {
             tq"${definitions.ByNameParamClass}[$resultTypeTree]"
