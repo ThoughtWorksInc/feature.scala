@@ -20,7 +20,7 @@ class FactorySpec extends FreeSpec with Matchers {
       def floatOrdering: Ordering[Float]
     }
 
-    val ab = Factory[B].newInstance(intValue = 42, stringValue = "foo")
+    val ab = Factory[B with B with Any].newInstance(intValue = 42, stringValue = "foo")
     ab should be(a[A])
     ab should be(a[B])
   }

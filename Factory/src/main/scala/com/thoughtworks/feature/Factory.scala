@@ -5,6 +5,9 @@ import com.thoughtworks.Extractor._
 
 import scala.annotation.meta.getter
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
+import scala.collection.generic.Growable
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /** A factory to create new instances, especially dynamic mix-ins.
   *
@@ -170,42 +173,54 @@ object Factory {
           (a :: res._1, b :: res._2, c :: res._3, d :: res._4)
         }
     }
-    private def demixin(t: Type): Stream[Type] = {
+    private def selfTypes(t: Type): List[Type] = {
+      val builder = new ListBuffer[Type]
       val parts = scala.collection.mutable.HashSet.empty[Type]
-      def go(t: Type, ignoreNonClassType: Boolean): Stream[Type] = {
+      def go(t: Type): Unit = {
         val dealiased = t.dealias
-        if (parts(dealiased)) {
-          Stream.empty
-        } else {
+        if (!parts(dealiased)) {
           parts += dealiased
           dealiased match {
             case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
-              superTypes.toStream.flatMap(go(_, ignoreNonClassType = true))
+              superTypes.foreach(go)
             case typeRef: TypeRef =>
               val symbol = dealiased.typeSymbol
               if (symbol.isClass) {
                 val selfType = symbol.asClass.selfType.asSeenFrom(dealiased, symbol)
-                go(selfType, true) :+ dealiased
-              } else {
-                Stream.empty
+                go(selfType)
               }
+              builder += dealiased
             case _ =>
-              if (ignoreNonClassType) {
-                Stream.empty
-              } else {
-                Stream(dealiased)
-              }
+              builder += dealiased
           }
         }
       }
-      go(t, ignoreNonClassType = false)
+      go(t)
+      builder.result()
+    }
+
+    private def demixin(t: Type): List[Type] = {
+      val builder = new ListBuffer[Type]
+      def go(t: Type): Unit = {
+        val dealiased = t.dealias
+        dealiased match {
+          case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
+            for (superType <- superTypes) {
+              go(superType)
+            }
+          case _ =>
+            builder += dealiased
+        }
+      }
+      go(t)
+      builder.result()
     }
     private val injectType = typeOf[inject]
 
     def apply[Output: WeakTypeTag]: Tree = {
       val output = weakTypeOf[Output]
 
-      val componentTypes = demixin(output).toList
+      val componentTypes = demixin(glb(selfTypes(output)))
 
       val linearOutput = internal.refinedType(componentTypes, c.internal.enclosingOwner)
       val linearSymbol = linearOutput.typeSymbol
