@@ -286,7 +286,7 @@ object Factory {
       } yield {
         val memberSymbol = member.asTerm
         val methodName = memberSymbol.name.toTermName
-        val argumentName = TermName(c.freshName(methodName.toString))
+        val argumentName = c.freshName(methodName)
         val methodType = memberSymbol.infoIn(linearThis)
         val resultTypeTree: Tree = untyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
