@@ -153,6 +153,11 @@ object Factory {
     type Constructor = Constructor0
   }
 
+  def make[Output, Constructor0](constructor: Constructor0): Factory.Aux[Output, Constructor0] = new Factory[Output] {
+    type Constructor = Constructor0
+    val newInstance: Constructor0 = constructor
+  }
+
   implicit def apply[Output]: Factory[Output] = macro Macros.apply[Output]
 
   private[Factory] final class Macros(val c: whitebox.Context) {
@@ -366,16 +371,10 @@ object Factory {
       val newInstance = TermName(c.freshName("newInstance"))
       val refinedOutput = TypeName(c.freshName("RefinedOutput"))
       val result = q"""
-      def $makeNew[$refinedOutput]($newInstance: (..$parameterTypeTrees) => $refinedOutput): _root_.com.thoughtworks.feature.Factory.Aux[
-        $output,
-        ((..$parameterTypeTrees) => $refinedOutput) {
-          def apply(..$refinedTree): $refinedOutput
-        }] = new _root_.com.thoughtworks.feature.Factory[$output] {
-        type Constructor = ((..$parameterTypeTrees) => $refinedOutput) {
-          def apply(..$refinedTree): $refinedOutput
-        }
-        override val newInstance: Constructor = $newInstance
-      }
+        def $makeNew[$refinedOutput]($newInstance: (..$parameterTypeTrees) => $refinedOutput) =
+          _root_.com.thoughtworks.feature.Factory.make[$output, ((..$parameterTypeTrees) => $refinedOutput) {
+            def apply(..$refinedTree): $refinedOutput
+          }]($newInstance)
 
       def $constructorMethod(..$parameterTrees) = {
         final class $mixinClassName extends {
