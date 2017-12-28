@@ -80,7 +80,7 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
       case typeDefinitionSymbol.extract(name,
                                         typeDefinition.extract.forall(params),
                                         TypeBounds(untypeOption.extract(upper), untypeOption.extract(lower))) =>
-        Some(TypeDef(Modifiers(flags), name, params.toList, TypeBoundsTree(upper, lower)))
+        Some(q"$flags type $name[..$params] >: $upper <: $lower")
       case typeDefinitionSymbol
             .extract(name, typeDefinition.extract.forall(params: Seq[TypeDef]), untypeOption.extract(concreteType)) =>
         Some(q"$flags type $name[..$params] = $concreteType")
@@ -104,11 +104,12 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
         case varDefinitionSymbol.extract(name, untypeOption.extract(result)) =>
           Some(q"var $name: $result")
         case valDefinitionSymbol.extract(name, untypeOption.extract(result)) =>
-          Some(if (symbol.isImplicit) {
-            q"implicit val $name: $result"
+          val flags = if (symbol.isImplicit) {
+            Flag.IMPLICIT
           } else {
-            q"val $name: $result"
-          })
+            NoFlags
+          }
+          Some(q"$flags val $name: $result")
         case defDefinitionSymbol.extract(name,
                                          typeDefinition.extract.forall(typeParams),
                                          termDefinition.extract.forall.forall(params),
