@@ -61,14 +61,29 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
   }
 
   private def typeDefinitionOption(symbol: TypeSymbol)(implicit tpe: Type): Option[TypeDef] = {
+    val flags = {
+      if (symbol.isCovariant) {
+        Flag.COVARIANT
+      } else if (symbol.isContravariant) {
+        Flag.CONTRAVARIANT
+      } else {
+        NoFlags
+      }
+    } | {
+      if (symbol.isParameter) {
+        Flag.PARAM
+      } else {
+        NoFlags
+      }
+    }
     symbol match {
       case typeDefinitionSymbol.extract(name,
                                         typeDefinition.extract.forall(params),
                                         TypeBounds(untypeOption.extract(upper), untypeOption.extract(lower))) =>
-        Some(TypeDef(Modifiers(Flag.PARAM), name, params.toList, TypeBoundsTree(upper, lower)))
+        Some(q"$flags type $name[..$params] >: $upper <: $lower")
       case typeDefinitionSymbol
             .extract(name, typeDefinition.extract.forall(params: Seq[TypeDef]), untypeOption.extract(concreteType)) =>
-        Some(q"type $name[..$params] = $concreteType")
+        Some(q"$flags type $name[..$params] = $concreteType")
       case _ =>
         None
     }
@@ -89,11 +104,12 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
         case varDefinitionSymbol.extract(name, untypeOption.extract(result)) =>
           Some(q"var $name: $result")
         case valDefinitionSymbol.extract(name, untypeOption.extract(result)) =>
-          Some(if (symbol.isImplicit) {
-            q"implicit val $name: $result"
+          val flags = if (symbol.isImplicit) {
+            Flag.IMPLICIT
           } else {
-            q"val $name: $result"
-          })
+            NoFlags
+          }
+          Some(q"$flags val $name: $result")
         case defDefinitionSymbol.extract(name,
                                          typeDefinition.extract.forall(typeParams),
                                          termDefinition.extract.forall.forall(params),

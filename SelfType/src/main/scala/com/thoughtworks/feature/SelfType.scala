@@ -68,10 +68,6 @@ trait SelfType[A] {
 
 object SelfType {
 
-//  final class SelfTypeAux[A, Out0] extends SelfType[A] {
-//    type Out = Out0
-//  }
-
   type Aux[A, Out0] = SelfType[A] {
     type Out = Out0
   }
