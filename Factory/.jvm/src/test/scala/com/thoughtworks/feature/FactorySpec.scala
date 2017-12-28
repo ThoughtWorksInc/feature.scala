@@ -2,6 +2,7 @@ package com.thoughtworks.feature
 
 import com.thoughtworks.feature.Factory.inject
 import org.scalatest.{FreeSpec, Matchers}
+import shapeless.Witness
 
 /**
   * @author 杨博 (Yang Bo)
@@ -35,6 +36,12 @@ class FactorySpec extends FreeSpec with Matchers {
     ab should be(a[B])
   }
 
-}
+  "@inject should support shapeless.Witness" in {
+    trait A {
+      @inject
+      def witness42: Witness.Aux[Witness.`42`.T]
+    }
+    Factory[A].newInstance().witness42.value should be(42)
+  }
 
-object FactorySpec {}
+}

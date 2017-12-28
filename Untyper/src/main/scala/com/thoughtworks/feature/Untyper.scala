@@ -111,8 +111,10 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
     scala.Function.unlift(termDefinitionOption)
   }
 
+  protected def preprocess(tpe: Type): Type = tpe
+
   def untypeOption: Type => Option[Tree] = { implicit tpe: Type =>
-    tpe.dealias match {
+    preprocess(tpe) match {
       case ConstantType(value) =>
         Some(Literal(value))
       case singletonValue.extract(value) =>
@@ -139,7 +141,6 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
       case _ =>
         None
     }
-
   }
 
   def untype: PartialFunction[Type, Tree] = scala.Function.unlift(untypeOption)

@@ -228,7 +228,7 @@ object Factory {
 
       val mixinClassName = c.freshName(c.internal.enclosingOwner.name.encodedName.toTypeName)
 
-      def untyper = new Untyper[c.universe.type](c.universe) {
+      class ThisUntyper extends Untyper[c.universe.type](c.universe) {
         private def replaceThisValue: PartialFunction[Type, Tree] = {
           case tt @ ThisType(symbol) if symbol == linearSymbol =>
             This(mixinClassName)
@@ -237,6 +237,19 @@ object Factory {
           replaceThisValue.orElse(super.singletonValue)
         }
       }
+
+      def untype(tpe: Type): Tree = {
+        val untyper = new ThisUntyper
+        untyper.untype(tpe)
+      }
+
+      def dealiasUntype(tpe: Type): Tree = {
+        val untyper = new ThisUntyper {
+          override protected def preprocess(tpe: Type): Type = tpe.dealias
+        }
+        untyper.untype(tpe)
+      }
+
       val injectedNames = (for {
         baseClass <- linearOutput.baseClasses.reverse
         member <- baseClass.info.decls
@@ -254,7 +267,7 @@ object Factory {
         val methodName = injectedName.toTermName
         val memberSymbol = linearOutput.member(methodName).asTerm
         val methodType = memberSymbol.infoIn(linearThis)
-        val resultTypeTree: Tree = untyper.untype(methodType.finalResultType)
+        val resultTypeTree: Tree = untype(methodType.finalResultType)
 
         val modifiers = Modifiers(
           Flag.OVERRIDE |
@@ -278,10 +291,9 @@ object Factory {
           } else {
             val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
               if (argumentSymbol.asTerm.isImplicit) {
-                q"implicit val ${argumentSymbol.name.toTermName}: ${untyper
-                  .untype(argumentSymbol.info)}"
+                q"implicit val ${argumentSymbol.name.toTermName}: ${untype(argumentSymbol.info)}"
               } else {
-                q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
+                q"val ${argumentSymbol.name.toTermName}: ${untype(argumentSymbol.info)}"
               }
             })
             q"""
@@ -303,7 +315,7 @@ object Factory {
         val methodName = memberSymbol.name.toTermName
         val argumentName = c.freshName(methodName)
         val methodType = memberSymbol.infoIn(linearThis)
-        val resultTypeTree: Tree = untyper.untype(methodType.finalResultType)
+        val resultTypeTree: Tree = dealiasUntype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
            resultTypeTree,
@@ -320,7 +332,7 @@ object Factory {
                argumentIdTrees: List[List[Ident]]) =
             methodType.paramLists.map { parameterList =>
               parameterList.map { argumentSymbol =>
-                val argumentTypeTree: Tree = untyper.untype(argumentSymbol.info)
+                val argumentTypeTree: Tree = dealiasUntype(argumentSymbol.info)
                 val argumentName = argumentSymbol.name.toTermName
                 val argumentTree = if (argumentSymbol.asTerm.isImplicit) {
                   q"implicit val $argumentName: $argumentTypeTree"
@@ -368,7 +380,7 @@ object Factory {
                 if (lowerBound =:= definitions.AnyTpe) {
                   None
                 } else {
-                  Some(untyper.untype(lowerBound))
+                  Some(untype(lowerBound))
                 }
               })(collection.breakOut(List.canBuildFrom))
               val typeTree = if (lowerBounds.isEmpty) {
@@ -403,7 +415,7 @@ object Factory {
         }
         $makeNew($constructorMethod _)
       """
-      //      c.info(c.enclosingPosition, show(result), true)
+//            c.info(c.enclosingPosition, show(result), true)
       result
     }
 
