@@ -132,7 +132,6 @@ import scala.collection.mutable.ListBuffer
   *       val outer: Outer = Factory[Outer].newInstance(inner = Some("my value"))
   *       outer.inner should be(Some("my value"))
   *       }}}
-
   * @author 杨博 (Yang Bo) &lt;pop.atry@gmail.com&gt;
   */
 trait Factory[Output] extends Serializable {
@@ -217,6 +216,10 @@ object Factory {
     }
     private val injectType = typeOf[inject]
 
+    private def isAbstractType[Output: WeakTypeTag](symbol: c.universe.TypeSymbol): Boolean = {
+      symbol.isAbstract && !symbol.isClass
+    }
+
     def apply[Output: WeakTypeTag]: Tree = {
       val output = weakTypeOf[Output]
 
@@ -238,16 +241,10 @@ object Factory {
         }
       }
 
-      def untype(tpe: Type): Tree = {
-        val untyper = new ThisUntyper
-        untyper.untype(tpe)
-      }
+      def untyper = new ThisUntyper
 
-      def dealiasUntype(tpe: Type): Tree = {
-        val untyper = new ThisUntyper {
-          override protected def preprocess(tpe: Type): Type = tpe.dealias
-        }
-        untyper.untype(tpe)
+      def dealiasUntyper = new ThisUntyper {
+        override protected def preprocess(tpe: Type): Type = tpe.dealias
       }
 
       val injectedNames = (for {
@@ -267,7 +264,7 @@ object Factory {
         val methodName = injectedName.toTermName
         val memberSymbol = linearOutput.member(methodName).asTerm
         val methodType = memberSymbol.infoIn(linearThis)
-        val resultTypeTree: Tree = untype(methodType.finalResultType)
+        val resultTypeTree: Tree = untyper.untype(methodType.finalResultType)
 
         val modifiers = Modifiers(
           Flag.OVERRIDE |
@@ -291,9 +288,9 @@ object Factory {
           } else {
             val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
               if (argumentSymbol.asTerm.isImplicit) {
-                q"implicit val ${argumentSymbol.name.toTermName}: ${untype(argumentSymbol.info)}"
+                q"implicit val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
               } else {
-                q"val ${argumentSymbol.name.toTermName}: ${untype(argumentSymbol.info)}"
+                q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
               }
             })
             q"""
@@ -315,7 +312,7 @@ object Factory {
         val methodName = memberSymbol.name.toTermName
         val argumentName = c.freshName(methodName)
         val methodType = memberSymbol.infoIn(linearThis)
-        val resultTypeTree: Tree = dealiasUntype(methodType.finalResultType)
+        val resultTypeTree: Tree = dealiasUntyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
            resultTypeTree,
@@ -332,7 +329,7 @@ object Factory {
                argumentIdTrees: List[List[Ident]]) =
             methodType.paramLists.map { parameterList =>
               parameterList.map { argumentSymbol =>
-                val argumentTypeTree: Tree = dealiasUntype(argumentSymbol.info)
+                val argumentTypeTree: Tree = dealiasUntyper.untype(argumentSymbol.info)
                 val argumentName = argumentSymbol.name.toTermName
                 val argumentTree = if (argumentSymbol.asTerm.isImplicit) {
                   q"implicit val $argumentName: $argumentTypeTree"
@@ -358,40 +355,31 @@ object Factory {
 
       val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = zippedProxies.unzip4
       val (defProxies, valProxies) = proxies.partition(_.isDef)
-      val overridenTypes =
-        (for {
-          componentType <- componentTypes
-          member <- componentType.members
-          if member.isType
-        } yield member).distinct
-          .groupBy(_.name.toString)
-          .withFilter {
-            _._2.forall {
-              _.info match {
-                case TypeBounds(_, _) => true
-                case _                => false
-              }
-            }
-          }
-          .map {
-            case (name, members) =>
-              val lowerBounds: List[Tree] = members.collect(scala.Function.unlift[Symbol, Tree] { memberSymbol =>
-                val TypeBounds(_, lowerBound) = memberSymbol.infoIn(linearThis)
-                if (lowerBound =:= definitions.AnyTpe) {
-                  None
-                } else {
-                  Some(untype(lowerBound))
-                }
-              })(collection.breakOut(List.canBuildFrom))
-              val typeTree = if (lowerBounds.isEmpty) {
-                TypeTree(definitions.AnyTpe)
-              } else {
-                CompoundTypeTree(Template(lowerBounds, noSelfType, Nil))
-              }
-              val result = q"override type ${TypeName(name)} = $typeTree"
-              //                c.info(c.enclosingPosition, show(result), true)
-              result
-          }
+      val typeMembers = for {
+        componentType <- componentTypes
+        member <- componentType.members
+        if member.isType
+      } yield member.asType
+
+      val groupedTypeSymbols = typeMembers.groupBy(_.name.encodedName.toTypeName)
+
+      def overrideType(name: TypeName, members: List[TypeSymbol]): Tree = {
+        val glbType = glb(members.map { memberSymbol =>
+          memberSymbol.infoIn(linearThis)
+        })
+        val typeParameterTrees = glbType.typeParams.map { typeParamSymbol =>
+          untyper.typeDefinition(linearThis)(typeParamSymbol.asType)
+        }
+        val TypeBounds(_, lowerBound) = glbType.resultType
+        val result = q"override type $name[..$typeParameterTrees] = ${untyper.untype(lowerBound)}"
+        //          c.info(c.enclosingPosition, show(result), true)
+        result
+      }
+
+      val overridenTypes = for {
+        (name, members) <- groupedTypeSymbols
+        if members.forall(isAbstractType)
+      } yield overrideType(name, members)
 
       val makeNew = TermName(c.freshName("makeNew"))
       val constructorMethod = TermName(c.freshName("constructor"))

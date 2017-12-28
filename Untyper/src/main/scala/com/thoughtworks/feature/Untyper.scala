@@ -61,14 +61,29 @@ class Untyper[Universe <: Singleton with scala.reflect.api.Universe](val univers
   }
 
   private def typeDefinitionOption(symbol: TypeSymbol)(implicit tpe: Type): Option[TypeDef] = {
+    val flags = {
+      if (symbol.isCovariant) {
+        Flag.COVARIANT
+      } else if (symbol.isContravariant) {
+        Flag.CONTRAVARIANT
+      } else {
+        NoFlags
+      }
+    } | {
+      if (symbol.isParameter) {
+        Flag.PARAM
+      } else {
+        NoFlags
+      }
+    }
     symbol match {
       case typeDefinitionSymbol.extract(name,
                                         typeDefinition.extract.forall(params),
                                         TypeBounds(untypeOption.extract(upper), untypeOption.extract(lower))) =>
-        Some(TypeDef(Modifiers(Flag.PARAM), name, params.toList, TypeBoundsTree(upper, lower)))
+        Some(TypeDef(Modifiers(flags), name, params.toList, TypeBoundsTree(upper, lower)))
       case typeDefinitionSymbol
             .extract(name, typeDefinition.extract.forall(params: Seq[TypeDef]), untypeOption.extract(concreteType)) =>
-        Some(q"type $name[..$params] = $concreteType")
+        Some(q"$flags type $name[..$params] = $concreteType")
       case _ =>
         None
     }
