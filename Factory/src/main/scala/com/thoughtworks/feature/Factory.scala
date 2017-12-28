@@ -293,8 +293,11 @@ object Factory {
                 q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
               }
             })
+            val typeParameterTrees = methodType.typeParams.map { typeParamSymbol =>
+              untyper.typeDefinition(linearThis)(typeParamSymbol.asType)
+            }
             q"""
-            $modifiers def $methodName[..${methodType.typeArgs}](...$argumentTrees) = {
+            $modifiers def $methodName[..$typeParameterTrees](...$argumentTrees) = {
               val $methodName = ()
               _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value
             }
@@ -346,7 +349,10 @@ object Factory {
               tq"..$arguments => $result"
             }
           }
-          (q"override def $methodName[..${methodType.typeArgs}](...$argumentTrees) = $argumentName",
+          val typeParameterTrees = methodType.typeParams.map { typeParamSymbol =>
+            untyper.typeDefinition(linearThis)(typeParamSymbol.asType)
+          }
+          (q"override def $methodName[..$typeParameterTrees](...$argumentTrees) = $argumentName",
            functionTypeTree,
            q"val $argumentName: $functionTypeTree",
            q"val $methodName: $functionTypeTree")

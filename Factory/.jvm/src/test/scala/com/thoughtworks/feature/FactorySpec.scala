@@ -46,23 +46,24 @@ class FactorySpec extends FreeSpec with Matchers {
   }
 
   "Inner abstract types can have type parameter" in {
-    trait Outer {
-      protected trait Inner1Api[A, +B, -C]
-      type Inner[A, +B, -C] <: Inner1Api[A, B, C]
+    trait Outer1 {
+      protected trait InnerApi[A, +B, -C]
+      type Inner[A, +B, -C] <: InnerApi[A, B, C]
 
       @inject
-        def innerFactory: Factory[Inner[Int, String, Double]]
+      def innerFactory[A]: Factory[Inner[A, String, Double]]
 
     }
 
     trait Outer2 {
-      protected trait Inner2Api[A, +B, -C]
-      type Inner[A, +B, -C] <: Inner2Api[A, B, C]
+      protected trait InnerApi[A, +B, -C]
+      type Inner[A, +B, -C] <: InnerApi[A, B, C]
 
     }
 
-    val outer = Factory[Outer with Outer2].newInstance()
-    outer.innerFactory.newInstance() should be(a[outer.Inner[_, _, _]])
+    val outer = Factory[Outer1 with Outer2].newInstance()
+    val inner = outer.innerFactory[Int].newInstance()
+    "implicitly[inner.type <:< outer.Inner[Int, String, Double]]" should compile
   }
 
 }
