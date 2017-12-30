@@ -24,7 +24,7 @@ import scala.collection.mutable.ListBuffer
   *         }
   *         type Inner <: InnerApi
   *
-  *         @inject val innerFactory: Factory[Inner]
+  *         @inject val innerFactory: Factory.UnaryByName[AbstractParameter, Inner]
   *       }
   *
   *       Factory[Outer]
@@ -68,6 +68,20 @@ import scala.collection.mutable.ListBuffer
   *
   *          {{{
   *          "Factory[Foo[Symbol]]" shouldNot compile
+  *          }}}
+  *
+  *          If the trait does not contain abstract methods other than `@inject` methods,
+  *          then the factory type class is a [[Factory.Nullary]],
+  *          which can be summoned by [[Predef.implicitly]],
+  *
+  *          {{{
+  *          val nullaryFactory = implicitly[Factory.Nullary[Foo[Int]]]
+  *          }}}
+  *
+  *          and [[newInstance]] method is available on the [[Factory.Nullary]] as well.
+  *
+  *          {{{
+  *          nullaryFactory.newInstance().orderingA should be(implicitly[Ordering[Int]])
   *          }}}
   *
   *
@@ -146,7 +160,16 @@ trait Factory[Output] extends Serializable {
   val newInstance: Constructor
 }
 
-object Factory {
+private[feature] trait LowPriorityFactory {
+  implicit def factoryLt[Output, Constructor0, LubConstructor](
+      implicit factory: Factory.Aux[Output, Constructor0],
+      asLt: Factory.Aux[Output, Constructor0] <:< Factory.Lt[Output, LubConstructor]
+  ): Factory.Lt[Output, LubConstructor] = {
+    asLt(factory)
+  }
+}
+
+object Factory extends LowPriorityFactory {
 
   @getter
   final class inject extends StaticAnnotation
@@ -154,6 +177,15 @@ object Factory {
   type Aux[Output, Constructor0] = Factory[Output] {
     type Constructor = Constructor0
   }
+
+  type Lt[Output, +Constructor0] = Factory[Output] {
+    type Constructor <: Constructor0
+  }
+
+  type Nullary[Output] = Lt[Output, () => Output]
+
+  type Unary[-Parameter, Output] = Lt[Output, Parameter => Output]
+  type UnaryByName[-Parameter, Output] = Lt[Output, (=> Parameter) => Output]
 
   def make[Output, Constructor0](constructor: Constructor0): Factory.Aux[Output, Constructor0] = new Factory[Output] {
     type Constructor = Constructor0
