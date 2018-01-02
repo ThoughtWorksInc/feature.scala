@@ -117,11 +117,17 @@ import scala.collection.mutable.ListBuffer
   *          {{{
   *          val factory = Factory[Foo]
   *          }}}
-  *          Then the [[newInstance]] method of the factory should accept parameters according to abstract members.
+  *          Then the [[newInstance]] method of the factory should accept named arguments according to abstract members.
   *          {{{
-  *          val foo: Foo = factory.newInstance(bar = 1, baz = 2L)
-  *          foo.bar should be(1)
-  *          foo.baz should be(2L)
+  *          val createdFromNamedArguments: Foo = factory.newInstance(bar = 1, baz = 2L)
+  *          createdFromNamedArguments.bar should be(1)
+  *          createdFromNamedArguments.baz should be(2L)
+  *          }}}
+  *          When using unnamed parameters, the parameters should be passed in alphabetical order
+  *          {{{
+  *          val createdFromUnnamedArguments: Foo = factory.newInstance(1, 2L)
+  *          createdFromUnnamedArguments.bar should be(1)
+  *          createdFromUnnamedArguments.baz should be(2L)
   *          }}}
   *
   * @note This [[Factory]] disallows creating types that has an abstract member whose type depends on nested types
@@ -197,13 +203,12 @@ object Factory extends LowPriorityFactory {
   private[Factory] final class Macros(val c: whitebox.Context) {
     import c.universe._
 
-    implicit final class Unzip4[A, B, C, D](val xs: Iterable[(A, B, C, D)]) {
-      def unzip4: (List[A], List[B], List[C], List[D]) =
-        xs.foldRight[(List[A], List[B], List[C], List[D])]((Nil, Nil, Nil, Nil)) { (x, res) =>
-          val (a, b, c, d) = x
-          (a :: res._1, b :: res._2, c :: res._3, d :: res._4)
-        }
-    }
+    private def unzip4[A, B, C, D](xs: Traversable[(A, B, C, D)]): (List[A], List[B], List[C], List[D]) =
+      xs.foldRight[(List[A], List[B], List[C], List[D])]((Nil, Nil, Nil, Nil)) { (x, res) =>
+        val (a, b, c, d) = x
+        (a :: res._1, b :: res._2, c :: res._3, d :: res._4)
+      }
+
     private def selfTypes(t: Type): List[Type] = {
       val builder = new ListBuffer[Type]
       val parts = scala.collection.mutable.HashSet.empty[Type]
@@ -339,8 +344,8 @@ object Factory extends LowPriorityFactory {
         result
       }
 
-      val zippedProxies: Iterable[(Tree, Tree, Tree, Tree)] = for {
-        member <- linearOutput.members.sorted
+      val zippedProxies: Array[(Tree, Tree, Tree, Tree)] = for {
+        member <- linearOutput.members.toArray.sortBy(_.name.toString)
         if !injectedNames(member.name) && member.isTerm && member.isAbstract && !member.asTerm.isSetter
       } yield {
         val memberSymbol = member.asTerm
@@ -391,7 +396,7 @@ object Factory extends LowPriorityFactory {
         }
       }
 
-      val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = zippedProxies.unzip4
+      val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = unzip4(zippedProxies)
       val (defProxies, valProxies) = proxies.partition(_.isDef)
       val typeMembers = for {
         componentType <- componentTypes
