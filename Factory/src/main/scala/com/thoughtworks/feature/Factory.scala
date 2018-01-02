@@ -340,7 +340,7 @@ object Factory extends LowPriorityFactory {
       }
 
       val zippedProxies: Iterable[(Tree, Tree, Tree, Tree)] = for {
-        member <- linearOutput.members
+        member <- linearOutput.members.sorted
         if !injectedNames(member.name) && member.isTerm && member.isAbstract && !member.asTerm.isSetter
       } yield {
         val memberSymbol = member.asTerm
