@@ -192,8 +192,6 @@ object Factory extends LowPriorityFactory {
   type Nullary[Output] = Lt[Output, () => Output]
 
   type Unary[-Parameter, Output] = Lt[Output, Parameter => Output]
-//  type UnaryByName[-Parameter, Output] = Lt[Output, (=> Parameter) => Output]
-
   type Binary[-Parameter0, -Parameter1, Output] = Lt[Output, (Parameter0, Parameter1) => Output]
   type Ternary[-Parameter0, -Parameter1, -Parameter2, Output] = Lt[Output, (Parameter0, Parameter1, Parameter2) => Output]
  
