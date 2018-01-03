@@ -194,6 +194,9 @@ object Factory extends LowPriorityFactory {
   type Unary[-Parameter, Output] = Lt[Output, Parameter => Output]
 //  type UnaryByName[-Parameter, Output] = Lt[Output, (=> Parameter) => Output]
 
+  type Binary[-Parameter0, -Parameter1, Output] = Lt[Output, (Parameter0, Parameter1) => Output]
+  type Ternary[-Parameter0, -Parameter1, -Parameter2, Output] = Lt[Output, (Parameter0, Parameter1, Parameter2) => Output]
+ 
   def make[Output, Constructor0](constructor: Constructor0): Factory.Aux[Output, Constructor0] = new Factory[Output] {
     type Constructor = Constructor0
     val newInstance: Constructor0 = constructor
