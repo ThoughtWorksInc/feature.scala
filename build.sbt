@@ -46,7 +46,7 @@ lazy val UntyperJVM = Untyper.jvm.addSbtFiles(file("../build.sbt.shared"))
 
 lazy val UntyperJS = Untyper.js.addSbtFiles(file("../build.sbt.shared"))
 
-lazy val Factory = crossProject.crossType(CrossType.Pure).dependsOn(Untyper, The, SelfType, Glb)
+lazy val Factory = crossProject.crossType(CrossType.Pure).dependsOn(Untyper, The)
 
 lazy val FactoryJVM = Factory.jvm.addSbtFiles(file("../build.sbt.shared"))
 
