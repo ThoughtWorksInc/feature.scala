@@ -15,6 +15,7 @@ import scala.collection.mutable.ListBuffer
   *
   *       {{{
   *       import com.thoughtworks.feature.Factory.inject
+  *       import com.thoughtworks.feature.Factory.Factory1
   *       import com.thoughtworks.feature.ByName.`=>`
   *       trait Outer {
   *         trait AbstractParameterApi
@@ -25,7 +26,7 @@ import scala.collection.mutable.ListBuffer
   *         }
   *         type Inner <: InnerApi
   *
-  *         @inject val innerFactory: Factory.Unary[`=>`[AbstractParameter], Inner]
+  *         @inject val innerFactory: Factory1[`=>`[AbstractParameter], Inner]
   *       }
   *
   *       Factory[Outer]
@@ -72,14 +73,14 @@ import scala.collection.mutable.ListBuffer
   *          }}}
   *
   *          If the trait does not contain abstract methods other than `@inject` methods,
-  *          then the factory type class is a [[Factory.Nullary]],
+  *          then the factory type class is a [[Factory.Factory0]],
   *          which can be summoned by [[Predef.implicitly]],
   *
   *          {{{
-  *          val nullaryFactory = implicitly[Factory.Nullary[Foo[Int]]]
+  *          val nullaryFactory = implicitly[Factory.Factory0[Foo[Int]]]
   *          }}}
   *
-  *          and [[newInstance]] method is available on the [[Factory.Nullary]] as well.
+  *          and [[newInstance]] method is available on the [[Factory.Factory0]] as well.
   *
   *          {{{
   *          nullaryFactory.newInstance().orderingA should be(implicitly[Ordering[Int]])
@@ -189,11 +190,10 @@ object Factory extends LowPriorityFactory {
     type Constructor <: Constructor0
   }
 
-  type Nullary[Output] = Lt[Output, () => Output]
-
-  type Unary[-Parameter, Output] = Lt[Output, Parameter => Output]
-  type Binary[-Parameter0, -Parameter1, Output] = Lt[Output, (Parameter0, Parameter1) => Output]
-  type Ternary[-Parameter0, -Parameter1, -Parameter2, Output] = Lt[Output, (Parameter0, Parameter1, Parameter2) => Output]
+  type Factory0[Output] = Lt[Output, () => Output]
+  type Factory1[-Parameter0, Output] = Lt[Output, Parameter0 => Output]
+  type Factory2[-Parameter0, -Parameter1, Output] = Lt[Output, (Parameter0, Parameter1) => Output]
+  type Factory3[-Parameter0, -Parameter1, -Parameter2, Output] = Lt[Output, (Parameter0, Parameter1, Parameter2) => Output]
  
   def make[Output, Constructor0](constructor: Constructor0): Factory.Aux[Output, Constructor0] = new Factory[Output] {
     type Constructor = Constructor0
