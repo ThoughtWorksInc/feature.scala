@@ -15,6 +15,7 @@ import scala.collection.mutable.ListBuffer
   *
   *       {{{
   *       import com.thoughtworks.feature.Factory.inject
+  *       import com.thoughtworks.feature.ByName.`=>`
   *       trait Outer {
   *         trait AbstractParameterApi
   *         type AbstractParameter <: AbstractParameterApi
@@ -24,7 +25,7 @@ import scala.collection.mutable.ListBuffer
   *         }
   *         type Inner <: InnerApi
   *
-  *         @inject val innerFactory: Factory.UnaryByName[AbstractParameter, Inner]
+  *         @inject val innerFactory: Factory.Unary[`=>`[AbstractParameter], Inner]
   *       }
   *
   *       Factory[Outer]
@@ -191,7 +192,7 @@ object Factory extends LowPriorityFactory {
   type Nullary[Output] = Lt[Output, () => Output]
 
   type Unary[-Parameter, Output] = Lt[Output, Parameter => Output]
-  type UnaryByName[-Parameter, Output] = Lt[Output, (=> Parameter) => Output]
+//  type UnaryByName[-Parameter, Output] = Lt[Output, (=> Parameter) => Output]
 
   def make[Output, Constructor0](constructor: Constructor0): Factory.Aux[Output, Constructor0] = new Factory[Output] {
     type Constructor = Constructor0
