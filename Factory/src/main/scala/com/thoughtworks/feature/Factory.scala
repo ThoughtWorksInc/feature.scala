@@ -29,7 +29,8 @@ import scala.collection.mutable.ListBuffer
   *         @inject val innerFactory: Factory1[`=>`[AbstractParameter], Inner]
   *       }
   *
-  *       Factory[Outer]
+  *       val outer = Factory[Outer].newInstance()
+  *       outer.innerFactory.newInstance(new outer.AbstractParameterApi {}) should be(an[outer.Inner])
   *       }}}
   *
   * @note [[Factory.inject @inject]] works on implicit abstract methods as well.
