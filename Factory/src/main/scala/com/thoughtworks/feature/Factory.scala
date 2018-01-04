@@ -247,7 +247,11 @@ object Factory extends LowPriorityFactory {
               go(superType)
             }
           case _ =>
-            builder += dealiased
+            if (dealiased.typeSymbol.isClass) {
+              builder += dealiased
+            } else {
+              c.error(c.enclosingPosition, raw"""Cannot extend $dealiased because it is not a class type""")
+            }
         }
       }
       go(t)
@@ -262,8 +266,8 @@ object Factory extends LowPriorityFactory {
     def apply[Output: WeakTypeTag]: Tree = {
       val output = weakTypeOf[Output]
 
-      val componentTypes = demixin(glb(selfTypes(output)))
-
+      val flattenSelfTypes = selfTypes(output)
+      val componentTypes = demixin(glb(flattenSelfTypes))
       val linearOutput = internal.refinedType(componentTypes, c.internal.enclosingOwner)
       val linearSymbol = linearOutput.typeSymbol
       val linearThis = internal.thisType(linearSymbol)
