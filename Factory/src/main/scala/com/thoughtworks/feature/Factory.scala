@@ -7,9 +7,19 @@ import scala.annotation.meta.getter
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.collection.generic.Growable
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /** A factory to create new instances, especially dynamic mix-ins.
+  *
+  * @note Factories may create types that contains refinement types
+  *       {{{
+  *       trait SomeBuilder {
+  *         type A
+  *         def makeSome(a: A) = Some(a)
+  *       }
+  *       val someBuilder = Factory[SomeBuilder { type A = Int }].newInstance()
+  *       someBuilder.makeSome(42) should be(Some(42))
+  *       }}}
   *
   * @note Factories may be nested
   *
@@ -212,30 +222,40 @@ object Factory extends LowPriorityFactory {
         (a :: res._1, b :: res._2, c :: res._3, d :: res._4)
       }
 
-    private def selfTypes(t: Type): List[Type] = {
-      val builder = new ListBuffer[Type]
+    final case class SelfTypes(allTypes: List[Type], classTypes: List[Type], refinedScopes: Seq[Scope])
+
+    private def selfTypes(t: Type): SelfTypes = {
+      val allTypeBuilder = new ListBuffer[Type]
+      val classTypeBuilder = new ListBuffer[Type]
+      val refinedScopes = new ArrayBuffer[Scope]
       val parts = scala.collection.mutable.HashSet.empty[Type]
       def go(t: Type): Unit = {
         val dealiased = t.dealias
         if (!parts(dealiased)) {
           parts += dealiased
           dealiased match {
-            case RefinedType(superTypes, refinedScope) if refinedScope.isEmpty =>
+            case RefinedType(superTypes, refinedScope) =>
               superTypes.foreach(go)
+              if (refinedScope.nonEmpty) {
+                refinedScopes += refinedScope
+                allTypeBuilder += dealiased
+              }
             case typeRef: TypeRef =>
               val symbol = dealiased.typeSymbol
               if (symbol.isClass) {
                 val selfType = symbol.asClass.selfType.asSeenFrom(dealiased, symbol)
                 go(selfType)
               }
-              builder += dealiased
+              classTypeBuilder += dealiased
+              allTypeBuilder += dealiased
             case _ =>
-              builder += dealiased
+              classTypeBuilder += dealiased
+              allTypeBuilder += dealiased
           }
         }
       }
       go(t)
-      builder.result()
+      SelfTypes(allTypeBuilder.result(), classTypeBuilder.result(), refinedScopes.result())
     }
 
     private def demixin(t: Type): List[Type] = {
@@ -268,8 +288,9 @@ object Factory extends LowPriorityFactory {
       val output = weakTypeOf[Output]
 
       val flattenSelfTypes = selfTypes(output)
-      val componentTypes = demixin(glb(flattenSelfTypes))
-      val linearOutput = internal.refinedType(componentTypes, c.internal.enclosingOwner)
+      val componentTypes = demixin(glb(flattenSelfTypes.classTypes))
+      val demixinTypes = demixin(glb(flattenSelfTypes.allTypes))
+      val linearOutput = internal.refinedType(demixinTypes, c.internal.enclosingOwner)
       val linearSymbol = linearOutput.typeSymbol
       val linearThis = internal.thisType(linearSymbol)
 
@@ -406,7 +427,7 @@ object Factory extends LowPriorityFactory {
       val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = unzip4(zippedProxies)
       val (defProxies, valProxies) = proxies.partition(_.isDef)
       val typeMembers = for {
-        componentType <- componentTypes
+        componentType <- demixinTypes
         member <- componentType.members
         if member.isType
       } yield member.asType
@@ -431,6 +452,13 @@ object Factory extends LowPriorityFactory {
         if members.forall(isAbstractType)
       } yield overrideType(name, members)
 
+      val refinementTrees = for {
+        scope <- flattenSelfTypes.refinedScopes
+        symbol <- scope
+      } yield {
+        dealiasUntyper.definition(linearThis)(symbol)
+      }
+
       val makeNew = TermName(c.freshName("makeNew"))
       val constructorMethod = TermName(c.freshName("constructor"))
       val newInstance = TermName(c.freshName("newInstance"))
@@ -443,6 +471,7 @@ object Factory extends LowPriorityFactory {
 
         def $constructorMethod(..$parameterTrees) = {
           final class $mixinClassName extends {
+            ..$refinementTrees
             ..$overridenTypes
             ..$valProxies
           } with ..$componentTypes {
