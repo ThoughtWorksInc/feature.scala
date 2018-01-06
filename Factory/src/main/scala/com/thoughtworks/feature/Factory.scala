@@ -427,8 +427,8 @@ object Factory extends LowPriorityFactory {
       val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = unzip4(zippedProxies)
       val (defProxies, valProxies) = proxies.partition(_.isDef)
       val typeMembers = for {
-        componentType <- demixinTypes
-        member <- componentType.members
+        owner <- linearThis.baseClasses
+        member <- owner.info.decls
         if member.isType
       } yield member.asType
 
