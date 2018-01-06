@@ -11,6 +11,16 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /** A factory to create new instances, especially dynamic mix-ins.
   *
+  * @note Factories may create types that contains refinement types
+  *       {{{
+  *       trait SomeBuilder {
+  *         type A
+  *         def makeSome(a: A) = Some(a)
+  *       }
+  *       val someBuilder = Factory[SomeBuilder { type A = Int }].newInstance()
+  *       someBuilder.makeSome(42) should be(Some(42))
+  *       }}}
+  *
   * @note Factories may be nested
   *
   *       {{{
@@ -279,7 +289,8 @@ object Factory extends LowPriorityFactory {
 
       val flattenSelfTypes = selfTypes(output)
       val componentTypes = demixin(glb(flattenSelfTypes.classTypes))
-      val linearOutput = internal.refinedType(demixin(glb(flattenSelfTypes.allTypes)), c.internal.enclosingOwner)
+      val demixinTypes = demixin(glb(flattenSelfTypes.allTypes))
+      val linearOutput = internal.refinedType(demixinTypes, c.internal.enclosingOwner)
       val linearSymbol = linearOutput.typeSymbol
       val linearThis = internal.thisType(linearSymbol)
 
@@ -416,7 +427,7 @@ object Factory extends LowPriorityFactory {
       val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = unzip4(zippedProxies)
       val (defProxies, valProxies) = proxies.partition(_.isDef)
       val typeMembers = for {
-        componentType <- componentTypes
+        componentType <- demixinTypes
         member <- componentType.members
         if member.isType
       } yield member.asType
@@ -441,6 +452,13 @@ object Factory extends LowPriorityFactory {
         if members.forall(isAbstractType)
       } yield overrideType(name, members)
 
+      val refinementTrees = for {
+        scope <- flattenSelfTypes.refinedScopes
+        symbol <- scope
+      } yield {
+        dealiasUntyper.definition(linearThis)(symbol)
+      }
+
       val makeNew = TermName(c.freshName("makeNew"))
       val constructorMethod = TermName(c.freshName("constructor"))
       val newInstance = TermName(c.freshName("newInstance"))
@@ -453,6 +471,7 @@ object Factory extends LowPriorityFactory {
 
         def $constructorMethod(..$parameterTrees) = {
           final class $mixinClassName extends {
+            ..$refinementTrees
             ..$overridenTypes
             ..$valProxies
           } with ..$componentTypes {
