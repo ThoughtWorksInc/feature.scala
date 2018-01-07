@@ -204,8 +204,9 @@ object Factory extends LowPriorityFactory {
   type Factory0[Output] = Lt[Output, () => Output]
   type Factory1[-Parameter0, Output] = Lt[Output, Parameter0 => Output]
   type Factory2[-Parameter0, -Parameter1, Output] = Lt[Output, (Parameter0, Parameter1) => Output]
-  type Factory3[-Parameter0, -Parameter1, -Parameter2, Output] = Lt[Output, (Parameter0, Parameter1, Parameter2) => Output]
- 
+  type Factory3[-Parameter0, -Parameter1, -Parameter2, Output] =
+    Lt[Output, (Parameter0, Parameter1, Parameter2) => Output]
+
   def make[Output, Constructor0](constructor: Constructor0): Factory.Aux[Output, Constructor0] = new Factory[Output] {
     type Constructor = Constructor0
     val newInstance: Constructor0 = constructor
@@ -268,11 +269,7 @@ object Factory extends LowPriorityFactory {
               go(superType)
             }
           case _ =>
-            if (dealiased.typeSymbol.isClass) {
-              builder += dealiased
-            } else {
-              c.error(c.enclosingPosition, raw"""Cannot extend $dealiased because it is not a class type""")
-            }
+            builder += dealiased
         }
       }
       go(t)
@@ -442,7 +439,7 @@ object Factory extends LowPriorityFactory {
           untyper.typeDefinition(linearThis)(typeParamSymbol.asType)
         }
         val TypeBounds(_, lowerBound) = glbType.resultType
-        val result = q"override type $name[..$typeParameterTrees] = ${untyper.untype(lowerBound)}"
+        val result = q"override type $name[..$typeParameterTrees] = ${untyper.untype(glb(demixin(lowerBound)))}"
         //          c.info(c.enclosingPosition, show(result), true)
         result
       }
