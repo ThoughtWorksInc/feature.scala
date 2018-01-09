@@ -9,20 +9,13 @@ object TypeLevelScalaIssue135Workaround extends AutoPlugin {
 
   override def trigger: PluginTrigger = allRequirements
 
-  private object CrossFull {
-    def unapply(full: CrossVersion.Full): Some[String => String] = {
-      Some(full.remapVersion)
-    }
-  }
-
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     libraryDependencies := {
       val oldDependencies = libraryDependencies.value
-      val CrossFull(id) = CrossVersion.full
       for (libraryDependency <- oldDependencies) yield {
         libraryDependency.crossVersion match {
-          case CrossFull(remapVersion) if remapVersion.getClass == id.getClass =>
-            libraryDependency.copy(crossVersion = CrossVersion.patch)
+          case cross if cross == CrossVersion.full =>
+            libraryDependency.withCrossVersion(CrossVersion.patch)
           case _ =>
             libraryDependency
         }

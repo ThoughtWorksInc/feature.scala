@@ -1,4 +1,4 @@
-enablePlugins(Example)
+//enablePlugins(Example)
 
 libraryDependencies += "com.thoughtworks.extractor" %%% "extractor" % "2.1.0"
 
@@ -6,6 +6,6 @@ libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.
 
 scalacOptions += "-Xexperimental"
 
-addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M8").cross(CrossVersion.patch))
+addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M11").cross(CrossVersion.patch))
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.2" % Test
