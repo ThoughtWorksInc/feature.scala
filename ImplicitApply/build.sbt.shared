@@ -6,4 +6,4 @@ libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.11.0"
 
 scalacOptions  += "-Yliteral-types"
 
-addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M11").cross(CrossVersion.patch))
+addCompilerPlugin(("org.scalameta" % "paradise" % "latest.release").cross(CrossVersion.patch))
