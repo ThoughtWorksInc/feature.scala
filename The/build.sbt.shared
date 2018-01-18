@@ -1,3 +1,3 @@
 scalacOptions += "-Yliteral-types"
 
-//enablePlugins(Example)
+enablePlugins(Example)

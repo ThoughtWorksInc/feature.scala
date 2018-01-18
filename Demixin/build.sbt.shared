@@ -4,4 +4,4 @@ libraryDependencies += "com.chuusai" %%% "shapeless" % "2.3.2"
 
 incOptions in Test := (incOptions in Test).value.withRecompileOnMacroDef(java.util.Optional.of(true))
 
-// enablePlugins(Example)
+enablePlugins(Example)

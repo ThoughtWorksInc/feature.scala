@@ -1,4 +1,4 @@
-//enablePlugins(Example)
+enablePlugins(Example)
 
 libraryDependencies += "com.thoughtworks.extractor" %%% "extractor" % "2.1.0"
 
