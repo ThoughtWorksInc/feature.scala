@@ -320,6 +320,11 @@ object Factory extends LowPriorityFactory {
         }
       } yield member.name)(collection.breakOut(Set.canBuildFrom))
 
+      def the(typeTree: Tree) = {
+//        q"_root_.com.thoughtworks.feature.The.apply[$typeTree].value"
+        q"_root_.shapeless.the[$typeTree]"
+      }
+
       val injects = for {
         injectedName <- injectedNames
       } yield {
@@ -337,14 +342,14 @@ object Factory extends LowPriorityFactory {
           if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
             q"""$modifiers var $methodName = {
               val $methodName = ()
-              _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value
+              ${the(resultTypeTree)}
             }
             """
           } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
             q"""
             $modifiers val $methodName = {
                val $methodName = ()
-               _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value
+               ${the(resultTypeTree)}
             }
             """
           } else {
@@ -361,7 +366,7 @@ object Factory extends LowPriorityFactory {
             q"""
             $modifiers def $methodName[..$typeParameterTrees](...$argumentTrees) = {
               val $methodName = ()
-              _root_.com.thoughtworks.feature.The.apply[$resultTypeTree].value
+              ${the(resultTypeTree)}
             }
             """
           }
