@@ -4,95 +4,91 @@ organization in ThisBuild := "com.thoughtworks.feature"
 
 crossScalaVersions in ThisBuild := Seq("2.11.11-bin-typelevel-4", "2.12.4-bin-typelevel-4")
 
-scalaOrganization in updateSbtClassifiers in ThisBuild := (scalaOrganization in Global).value
-
-scalaOrganization in ThisBuild := "org.typelevel"
-
 lazy val Caller = crossProject.crossType(CrossType.Pure)
 
-lazy val CallerJVM = Caller.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val CallerJVM = Caller.jvm
 
-lazy val CallerJS = Caller.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val CallerJS = Caller.js
 
 lazy val Constructor = crossProject.crossType(CrossType.Pure).dependsOn(Mixin % Test)
 
-lazy val ConstructorJVM = Constructor.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val ConstructorJVM = Constructor.jvm
 
-lazy val ConstructorJS = Constructor.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val ConstructorJS = Constructor.js
 
 lazy val Mixin = crossProject.crossType(CrossType.Pure)
 
-lazy val MixinJVM = Mixin.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val MixinJVM = Mixin.jvm
 
-lazy val MixinJS = Mixin.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val MixinJS = Mixin.js
 
 lazy val Demixin = crossProject.crossType(CrossType.Pure)
 
-lazy val DemixinJVM = Demixin.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val DemixinJVM = Demixin.jvm
 
-lazy val DemixinJS = Demixin.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val DemixinJS = Demixin.js
 
 lazy val The = crossProject.crossType(CrossType.Pure)
 
-lazy val TheJVM = The.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val TheJVM = The.jvm
 
-lazy val TheJS = The.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val TheJS = The.js
 
 lazy val SyntacticTypeTree = crossProject.crossType(CrossType.Pure)
 
 lazy val Untyper = crossProject.crossType(CrossType.Pure)
 
-lazy val UntyperJVM = Untyper.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val UntyperJVM = Untyper.jvm
 
-lazy val UntyperJS = Untyper.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val UntyperJS = Untyper.js
 
 lazy val Factory = crossProject.crossType(CrossType.Pure).dependsOn(Untyper, The, ByName % Test)
 
-lazy val FactoryJVM = Factory.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val FactoryJVM = Factory.jvm
 
-lazy val FactoryJS = Factory.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val FactoryJS = Factory.js
 
 lazy val PartialApply = crossProject.crossType(CrossType.Pure)
 
-lazy val PartialApplyJVM = PartialApply.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val PartialApplyJVM = PartialApply.jvm
 
-lazy val PartialApplyJS = PartialApply.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val PartialApplyJS = PartialApply.js
 
 lazy val ImplicitApply = crossProject.crossType(CrossType.Pure)
 
-lazy val ImplicitApplyJVM = ImplicitApply.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val ImplicitApplyJVM = ImplicitApply.jvm
 
-lazy val ImplicitApplyJS = ImplicitApply.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val ImplicitApplyJS = ImplicitApply.js
 
 lazy val ByName = crossProject.crossType(CrossType.Pure)
 
-lazy val ByNameJVM = ByName.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val ByNameJVM = ByName.jvm
 
-lazy val ByNameJS = ByName.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val ByNameJS = ByName.js
 
 lazy val SelfType = crossProject.crossType(CrossType.Pure)
 
-lazy val SelfTypeJVM = SelfType.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val SelfTypeJVM = SelfType.jvm
 
-lazy val SelfTypeJS = SelfType.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val SelfTypeJS = SelfType.js
 
 lazy val Structural = crossProject.crossType(CrossType.Pure).dependsOn(Untyper)
 
-lazy val StructuralJVM = Structural.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val StructuralJVM = Structural.jvm
 
-lazy val StructuralJS = Structural.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val StructuralJS = Structural.js
 
 lazy val Glb = crossProject.crossType(CrossType.Pure)
 
-lazy val GlbJVM = Glb.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val GlbJVM = Glb.jvm
 
-lazy val GlbJS = Glb.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val GlbJS = Glb.js
 
 lazy val `mixins-ImplicitsSingleton` = crossProject.crossType(CrossType.Pure).dependsOn(Factory, ImplicitApply)
 
-lazy val `mixins-ImplicitsSingletonJVM` = `mixins-ImplicitsSingleton`.jvm.addSbtFiles(file("../build.sbt.shared"))
+lazy val `mixins-ImplicitsSingletonJVM` = `mixins-ImplicitsSingleton`.jvm
 
-lazy val `mixins-ImplicitsSingletonJS` = `mixins-ImplicitsSingleton`.js.addSbtFiles(file("../build.sbt.shared"))
+lazy val `mixins-ImplicitsSingletonJS` = `mixins-ImplicitsSingleton`.js
 
 lazy val unidoc = project
   .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
@@ -100,7 +96,7 @@ lazy val unidoc = project
     scalacOptions += "-Yliteral-types",
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch),
-    UnidocKeys.unidocProjectFilter in ScalaUnidoc in UnidocKeys.unidoc := {
+    unidocProjectFilter in ScalaUnidoc in BaseUnidocPlugin.autoImport.unidoc := {
       inProjects(
         UntyperJVM,
         MixinJVM,
