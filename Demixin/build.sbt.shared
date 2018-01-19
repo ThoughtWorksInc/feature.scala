@@ -1,6 +1,6 @@
 libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.value % Provided
 
-libraryDependencies += "com.chuusai" %%% "shapeless" % "2.3.2"
+libraryDependencies += "com.chuusai" %%% "shapeless" % "2.3.3"
 
 incOptions in Test := (incOptions in Test).value.withRecompileOnMacroDef(java.util.Optional.of(true))
 
