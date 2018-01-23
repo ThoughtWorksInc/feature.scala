@@ -22,17 +22,14 @@ cache:
 before_script:
 
 script:
-  - sbt +test +unidoc
-
-env:
-  - SBT_OPTS=-J-Xmx3550m
+  - sbt -J-Xmx3550m +test +unidoc
 
 before_deploy:
 
 deploy:
   skip_cleanup: true
   provider: script
-  script: sbt "release with-defaults skip-tests"
+  script: sbt -J-Xmx3550m "release with-defaults skip-tests"
   on:
     condition: -e ./deploy.sbt
     all_branches: true
