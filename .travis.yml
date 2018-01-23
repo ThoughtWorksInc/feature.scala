@@ -25,7 +25,7 @@ script:
   - sbt +test +unidoc
 
 env:
-  - SBT_OPTS="-J-Xms3550m -J-Xmx3550m"
+  - SBT_OPTS=-J-Xmx3550m
 
 before_deploy:
 
