@@ -22,14 +22,14 @@ cache:
 before_script:
 
 script:
-  - sbt -J-Xmx3550m +test +unidoc
+  - _JAVA_OPTIONS=-J-Xmx6g sbt -J-Xmx6g +test +unidoc
 
 before_deploy:
 
 deploy:
   skip_cleanup: true
   provider: script
-  script: sbt -J-Xmx3550m "release with-defaults skip-tests"
+  script: _JAVA_OPTIONS=-J-Xmx6g sbt -J-Xmx6g "release with-defaults skip-tests"
   on:
     condition: -e ./deploy.sbt
     all_branches: true
