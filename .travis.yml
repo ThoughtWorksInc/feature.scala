@@ -22,7 +22,7 @@ cache:
 before_script:
 
 script:
-  - sbt +test +unidoc
+  - sbt -mem 3550 +test +unidoc
 
 before_deploy:
 
