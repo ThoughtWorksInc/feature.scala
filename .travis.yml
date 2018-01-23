@@ -22,7 +22,10 @@ cache:
 before_script:
 
 script:
-  - sbt -mem 3550 +test +unidoc
+  - sbt +test +unidoc
+
+env:
+  - SBT_OPTS=-J-Xms3550m -J-Xmx3550m
 
 before_deploy:
 
