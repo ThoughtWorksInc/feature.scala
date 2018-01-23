@@ -1,1 +1,2 @@
--Xms3550m -Xmx3550m
+-J-Xms3550m
+-J-Xmx3550m
