@@ -4,7 +4,7 @@ import scala.reflect.macros.whitebox
 import com.thoughtworks.Extractor._
 
 import scala.annotation.meta.getter
-import scala.annotation.{StaticAnnotation, compileTimeOnly}
+import scala.annotation.{StaticAnnotation, compileTimeOnly, tailrec}
 import scala.collection.generic.Growable
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -293,9 +293,10 @@ object Factory extends LowPriorityFactory {
 
       val mixinClassName = c.freshName(c.internal.enclosingOwner.name.encodedName.toTypeName)
 
-      class ThisUntyper extends Untyper[c.universe.type](c.universe) {
+      /** An [[Untyper]] that produces a [[Tree]] used inside the generated anonymous class. */
+      def internalUntyper = new Untyper[c.universe.type](c.universe) {
         private def replaceThisValue: PartialFunction[Type, Tree] = {
-          case tt @ ThisType(symbol) if symbol == linearSymbol =>
+          case ThisType(symbol) if symbol == linearSymbol =>
             This(mixinClassName)
         }
         override def singletonValue: PartialFunction[Type, Tree] = {
@@ -303,10 +304,15 @@ object Factory extends LowPriorityFactory {
         }
       }
 
-      def untyper = new ThisUntyper
-
-      def dealiasUntyper = new ThisUntyper {
-        override protected def preprocess(tpe: Type): Type = tpe.dealias
+      /** An [[Untyper]] that produces a [[Tree]] used outside the generated anonymous class. */
+      def externalUntyper = new Untyper[c.universe.type](c.universe) {
+        private def replaceThisValue: PartialFunction[Type, Tree] = {
+          case tt @ ThisType(symbol) if symbol == linearSymbol =>
+            TypeTree(linearOutput)
+        }
+        override def singletonValue: PartialFunction[Type, Tree] = {
+          replaceThisValue.orElse(super.singletonValue)
+        }
       }
 
       val injectedNames = (for {
@@ -326,7 +332,7 @@ object Factory extends LowPriorityFactory {
         val methodName = injectedName.toTermName
         val memberSymbol = linearOutput.member(methodName).asTerm
         val methodType = memberSymbol.infoIn(linearThis)
-        val resultTypeTree: Tree = untyper.untype(methodType.finalResultType)
+        val resultTypeTree: Tree = internalUntyper.untype(methodType.finalResultType)
 
         val modifiers = Modifiers(
           Flag.OVERRIDE |
@@ -350,13 +356,13 @@ object Factory extends LowPriorityFactory {
           } else {
             val argumentTrees = methodType.paramLists.map(_.map { argumentSymbol =>
               if (argumentSymbol.asTerm.isImplicit) {
-                q"implicit val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
+                q"implicit val ${argumentSymbol.name.toTermName}: ${internalUntyper.untype(argumentSymbol.info)}"
               } else {
-                q"val ${argumentSymbol.name.toTermName}: ${untyper.untype(argumentSymbol.info)}"
+                q"val ${argumentSymbol.name.toTermName}: ${internalUntyper.untype(argumentSymbol.info)}"
               }
             })
             val typeParameterTrees = methodType.typeParams.map { typeParamSymbol =>
-              untyper.typeDefinition(linearThis)(typeParamSymbol.asType)
+              internalUntyper.typeDefinition(linearThis)(typeParamSymbol.asType)
             }
             q"""
             $modifiers def $methodName[..$typeParameterTrees](...$argumentTrees) = {
@@ -377,7 +383,7 @@ object Factory extends LowPriorityFactory {
         val methodName = memberSymbol.name.toTermName
         val argumentName = c.freshName(methodName)
         val methodType = memberSymbol.infoIn(linearThis)
-        val resultTypeTree: Tree = dealiasUntyper.untype(methodType.finalResultType)
+        val resultTypeTree: Tree = externalUntyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
            resultTypeTree,
@@ -394,7 +400,7 @@ object Factory extends LowPriorityFactory {
                argumentIdTrees: List[List[Ident]]) =
             methodType.paramLists.map { parameterList =>
               parameterList.map { argumentSymbol =>
-                val argumentTypeTree: Tree = dealiasUntyper.untype(argumentSymbol.info)
+                val argumentTypeTree: Tree = externalUntyper.untype(argumentSymbol.info)
                 val argumentName = argumentSymbol.name.toTermName
                 val argumentTree = if (argumentSymbol.asTerm.isImplicit) {
                   q"implicit val $argumentName: $argumentTypeTree"
@@ -412,7 +418,7 @@ object Factory extends LowPriorityFactory {
             }
           }
           val typeParameterTrees = methodType.typeParams.map { typeParamSymbol =>
-            untyper.typeDefinition(linearThis)(typeParamSymbol.asType)
+            internalUntyper.typeDefinition(linearThis)(typeParamSymbol.asType)
           }
           (q"override def $methodName[..$typeParameterTrees](...$argumentTrees) = $argumentName",
            functionTypeTree,
@@ -436,10 +442,10 @@ object Factory extends LowPriorityFactory {
           memberSymbol.infoIn(linearThis)
         })
         val typeParameterTrees = glbType.typeParams.map { typeParamSymbol =>
-          untyper.typeDefinition(linearThis)(typeParamSymbol.asType)
+          internalUntyper.typeDefinition(linearThis)(typeParamSymbol.asType)
         }
         val TypeBounds(_, lowerBound) = glbType.resultType
-        val result = q"override type $name[..$typeParameterTrees] = ${untyper.untype(glb(demixin(lowerBound)))}"
+        val result = q"override type $name[..$typeParameterTrees] = ${internalUntyper.untype(glb(demixin(lowerBound)))}"
         //          c.info(c.enclosingPosition, show(result), true)
         result
       }
@@ -453,7 +459,7 @@ object Factory extends LowPriorityFactory {
         scope <- flattenSelfTypes.refinedScopes
         symbol <- scope
       } yield {
-        dealiasUntyper.definition(linearThis)(symbol)
+        internalUntyper.definition(linearThis)(symbol)
       }
 
       val makeNew = TermName(c.freshName("makeNew"))
