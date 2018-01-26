@@ -151,7 +151,10 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
   *         val inner: Option[Inner]
   *       }
   *
-  *       "Factory.newInstance[Outer](inner = None)" shouldNot typeCheck
+  *       if (!scala.util.Properties.versionNumberString.startsWith("2.11.")) {
+  *         // Disable the check in Scala 2.11 because `shouldNot typeCheck` is buggy in Scala 2.11
+  *         "Factory[Outer].newInstance(inner = None)" shouldNot typeCheck
+  *       }
   *       }}}
   *
   * @note However, if the nested type is an alias to another type outside of the type to create, then it is allowed
