@@ -206,6 +206,12 @@ object Factory extends LowPriorityFactory {
   type Factory2[-Parameter0, -Parameter1, Output] = Lt[Output, (Parameter0, Parameter1) => Output]
   type Factory3[-Parameter0, -Parameter1, -Parameter2, Output] =
     Lt[Output, (Parameter0, Parameter1, Parameter2) => Output]
+  type Factory4[-Parameter0, -Parameter1, -Parameter2, -Parameter3, Output] =
+    Lt[Output, (Parameter0, Parameter1, Parameter2, Parameter3) => Output]
+  type Factory5[-Parameter0, -Parameter1, -Parameter2, -Parameter3, -Parameter4, Output] =
+    Lt[Output, (Parameter0, Parameter1, Parameter2, Parameter3, Parameter4) => Output]
+  type Factory6[-Parameter0, -Parameter1, -Parameter2, -Parameter3, -Parameter4, -Parameter5, Output] =
+    Lt[Output, (Parameter0, Parameter1, Parameter2, Parameter3, Parameter4, Parameter5) => Output]
 
   def make[Output, Constructor0](constructor: Constructor0): Factory.Aux[Output, Constructor0] = new Factory[Output] {
     type Constructor = Constructor0
