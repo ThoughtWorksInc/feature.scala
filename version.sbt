@@ -1,3 +1,1 @@
-version in ThisBuild := "2.3.0-SNAPSHOT"
-
-releaseVersion := { _ => "2.3.0-M6" }
+version in ThisBuild := "2.3.0-M6"
