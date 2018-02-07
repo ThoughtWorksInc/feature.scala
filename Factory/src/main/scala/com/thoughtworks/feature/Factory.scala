@@ -122,8 +122,14 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
   * @example Given a trait that has abstract members.
   *          {{{
   *          trait Foo {
-  *            val bar: Int
-  *            var baz: Long
+  *            val myValue: String
+  *            var myVariable: Long
+  *            def myMethod0(): Option[Double]
+  *            def myMethod2(p0: Int, p1: Int): Int
+  *            def myCurriedMethod(seq: Seq[Int])(mapper: Int => String): Seq[String]
+  *
+  *            // Methods without pararmeters is disabled for now, due to https://github.com/scala/bug/issues/10647
+  *            // def myByNameMethod: Option[Int]
   *          }
   *          }}}
   *          When creating a factory for the trait.
@@ -132,15 +138,33 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
   *          }}}
   *          Then the [[newInstance]] method of the factory should accept named arguments according to abstract members.
   *          {{{
-  *          val createdFromNamedArguments: Foo = factory.newInstance(bar = 1, baz = 2L)
-  *          createdFromNamedArguments.bar should be(1)
-  *          createdFromNamedArguments.baz should be(2L)
+  *          val createdFromNamedArguments: Foo = factory.newInstance(
+  *            myValue = "string value",
+  *            myVariable = 42L,
+  *            myMethod0 = () => Some(0.5),
+  *            myMethod2 = _ + _,
+  *            myCurriedMethod = seq => mapper => seq.map(mapper)
+  *          )
+  *          createdFromNamedArguments.myValue should be("string value")
+  *          createdFromNamedArguments.myVariable should be(42L)
+  *
+  *          createdFromNamedArguments.myMethod0() should be(Some(0.5))
+  *          createdFromNamedArguments.myMethod0() shouldNot be theSameInstanceAs createdFromNamedArguments.myMethod0()
+  *
+  *          createdFromNamedArguments.myMethod2(1000, 24) should be(1024)
+  *
+  *          createdFromNamedArguments.myCurriedMethod(Seq(2, 3, 4))(_.toString) should be(Seq("2", "3", "4"))
+  *
   *          }}}
   *          When using unnamed parameters, the parameters should be passed in alphabetical order
   *          {{{
-  *          val createdFromUnnamedArguments: Foo = factory.newInstance(1, 2L)
-  *          createdFromUnnamedArguments.bar should be(1)
-  *          createdFromUnnamedArguments.baz should be(2L)
+  *          val createdFromUnnamedArguments: Foo = factory.newInstance(
+  *            seq => mapper => seq.map(mapper), // myCurriedMethod
+  *            () => Some(0.5),                  // myMethod0
+  *            _ + _,                            // myMethod2
+  *            "string value",                   // myValue
+  *            42L                               // myVariable
+  *          )
   *          }}}
   *
   * @note This [[Factory]] disallows creating types that has an abstract member whose type depends on nested types
@@ -429,7 +453,7 @@ object Factory extends LowPriorityFactory {
           val typeParameterTrees = methodType.typeParams.map { typeParamSymbol =>
             internalUntyper.typeDefinition(linearThis)(typeParamSymbol.asType)
           }
-          (q"override def $methodName[..$typeParameterTrees](...$argumentTrees) = $argumentName",
+          (q"override def $methodName[..$typeParameterTrees](...$argumentTrees) = $argumentName(...$argumentIdTrees)",
            functionTypeTree,
            q"val $argumentName: $functionTypeTree",
            q"val $methodName: $functionTypeTree")
