@@ -3,7 +3,7 @@ import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import com.thoughtworks.Extractor._
 
-import scala.annotation.meta.getter
+import scala.annotation.meta.{companionObject, getter}
 import scala.annotation.{StaticAnnotation, compileTimeOnly, tailrec}
 import scala.collection.generic.Growable
 import scala.collection.mutable
@@ -256,6 +256,7 @@ object Factory extends LowPriorityFactory {
         (a :: res._1, b :: res._2, c :: res._3, d :: res._4)
       }
 
+    @(silent @companionObject)
     final case class SelfTypes(allTypes: List[Type], classTypes: List[Type], refinedScopes: Seq[Scope])
 
     private def selfTypes(t: Type): SelfTypes = {
