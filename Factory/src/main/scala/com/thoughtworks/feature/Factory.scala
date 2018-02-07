@@ -1,4 +1,6 @@
 package com.thoughtworks.feature
+import com.github.ghik.silencer.silent
+
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import com.thoughtworks.Extractor._
