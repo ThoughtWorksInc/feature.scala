@@ -11,3 +11,5 @@ libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3" % Test
 addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "0.6")
 
 libraryDependencies += "com.github.ghik" %% "silencer-lib" % "0.6"
+
+enablePlugins(Example)

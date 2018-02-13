@@ -169,19 +169,20 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
   *          )
   *          }}}
   *
-  * @note This [[Factory]] disallows creating types that has an abstract member whose type depends on nested types
+  * @note This [[Factory]] disallows creating types that has an abstract member whose type depends on nested types.
+  *
+  *       Given an abstract `val inner` whose type is the `Inner`,
   *
   *       {{{
   *       trait Outer {
   *         trait Inner
   *         val inner: Option[Inner]
   *       }
-  *
-  *       if (!scala.util.Properties.versionNumberString.startsWith("2.11.")) {
-  *         // Disable the check in Scala 2.11 because `shouldNot typeCheck` is buggy in Scala 2.11
-  *         "Factory[Outer].newInstance(inner = None)" shouldNot typeCheck
-  *       }
   *       }}}
+  *
+  *       then the attempt to create factory for `Outer`,
+  *       like `Factory[Outer].newInstance(inner = None)`,
+  *       will cause a `value inner has incompatible type` compile error.
   *
   * @note However, if the nested type is an alias to another type outside of the type to create, then it is allowed
   *
@@ -252,10 +253,10 @@ object Factory extends LowPriorityFactory {
   private[Factory] final class Macros(val c: whitebox.Context) {
     import c.universe._
 
-    private def unzip4[A, B, C, D](xs: Traversable[(A, B, C, D)]): (List[A], List[B], List[C], List[D]) =
-      xs.foldRight[(List[A], List[B], List[C], List[D])]((Nil, Nil, Nil, Nil)) { (x, res) =>
-        val (a, b, c, d) = x
-        (a :: res._1, b :: res._2, c :: res._3, d :: res._4)
+    private def unzip5[A, B, C, D, E](xs: Traversable[(A, B, C, D, E)]): (List[A], List[B], List[C], List[D], List[E]) =
+      xs.foldRight[(List[A], List[B], List[C], List[D], List[E])]((Nil, Nil, Nil, Nil, Nil)) { (x, res) =>
+        val (a, b, c, d, e) = x
+        (a :: res._1, b :: res._2, c :: res._3, d :: res._4, e :: res._5)
       }
 
     @(silent @companionObject)
@@ -411,7 +412,7 @@ object Factory extends LowPriorityFactory {
         result
       }
 
-      val zippedProxies: Array[(Tree, Tree, Tree, Tree)] = for {
+      val zippedProxies: Array[(Tree, Option[Tree], Tree, Tree, Tree)] = for {
         member <- linearOutput.members.toArray.sortBy(_.name.toString)
         if !injectedNames(member.name) && member.isTerm && member.isAbstract && !member.asTerm.isSetter
       } yield {
@@ -422,11 +423,13 @@ object Factory extends LowPriorityFactory {
         val resultTypeTree: Tree = externalUntyper.untype(methodType.finalResultType)
         if (memberSymbol.isVar || memberSymbol.setter != NoSymbol) {
           (q"override var $methodName = $argumentName",
+           None,
            resultTypeTree,
            q"val $argumentName: $resultTypeTree",
            q"val $methodName: $resultTypeTree")
         } else if (memberSymbol.isVal || memberSymbol.isGetter || memberSymbol.isStable) {
           (q"override val $methodName = $argumentName",
+           None,
            resultTypeTree,
            q"val $argumentName: $resultTypeTree",
            q"val $methodName: $resultTypeTree")
@@ -456,15 +459,21 @@ object Factory extends LowPriorityFactory {
           val typeParameterTrees = methodType.typeParams.map { typeParamSymbol =>
             internalUntyper.typeDefinition(linearThis)(typeParamSymbol.asType)
           }
-          (q"override def $methodName[..$typeParameterTrees](...$argumentTrees) = $argumentName(...$argumentIdTrees)",
+          val earlyName = c.freshName(methodName)
+          val overrideDef = {
+            q"override def $methodName[..$typeParameterTrees](...$argumentTrees) = $earlyName(...$argumentIdTrees)"
+          }
+          (q"private val $earlyName = $argumentName",
+           Some(overrideDef),
            functionTypeTree,
            q"val $argumentName: $functionTypeTree",
            q"val $methodName: $functionTypeTree")
         }
       }
 
-      val (proxies, parameterTypeTrees, parameterTrees, refinedTree) = unzip4(zippedProxies)
-      val (defProxies, valProxies) = proxies.partition(_.isDef)
+      val (earlyProxies, lateProxyOptions, parameterTypeTrees, parameterTrees, refinedTree) = unzip5(zippedProxies)
+      val lateProxies = lateProxyOptions.collect { case Some(proxy) => proxy }
+//      val (defProxies, valProxies) = proxies.partition(_.isDef)
       val typeMembers = for {
         owner <- linearThis.baseClasses
         member <- owner.info.decls
@@ -512,9 +521,9 @@ object Factory extends LowPriorityFactory {
           final class $mixinClassName extends {
             ..$refinementTrees
             ..$overridenTypes
-            ..$valProxies
+            ..$earlyProxies
           } with ..$componentTypes {
-            ..$defProxies
+            ..$lateProxies
             ..$injects
           }
           new $mixinClassName

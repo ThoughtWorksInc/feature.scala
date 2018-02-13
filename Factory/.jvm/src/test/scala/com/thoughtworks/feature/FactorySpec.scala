@@ -66,4 +66,12 @@ class FactorySpec extends FreeSpec with Matchers {
     "implicitly[inner.type <:< outer.Inner[Int, String, Double]]" should compile
   }
 
+  "All arguments should be initialize early" in {
+    trait EarlyDefinition {
+      val a: Int
+      val plusOne = a + 1
+    }
+    Factory[EarlyDefinition].newInstance(42).plusOne should be(43)
+  }
+
 }
