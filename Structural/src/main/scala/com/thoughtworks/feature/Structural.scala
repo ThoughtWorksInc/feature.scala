@@ -38,7 +38,7 @@ import scala.reflect.ClassTag
   *          However, the struct is not a String
   *
   *          {{{
-  *          "struct: String" shouldNot typeCheck
+  *          "myStruct: String" shouldNot typeCheck
   *          }}}
   *
   * @example Given a class that contains abstract types:
