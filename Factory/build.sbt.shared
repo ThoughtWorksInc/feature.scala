@@ -1,15 +1,15 @@
-libraryDependencies += "com.thoughtworks.extractor" %%% "extractor" % "2.1.0"
+libraryDependencies += "com.thoughtworks.extractor" %%% "extractor" % "2.1.1"
 
 libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.value % Provided
 
 scalacOptions += "-Xexperimental"
 
-addCompilerPlugin(("org.scalameta" % "paradise" % "latest.release").cross(CrossVersion.patch))
+addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M10").cross(CrossVersion.patch))
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3" % Test
 
-addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "0.6")
+addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.2.1")
 
-libraryDependencies += "com.github.ghik" %% "silencer-lib" % "0.6"
+libraryDependencies += "com.github.ghik" %% "silencer-lib" % "1.2.1"
 
 enablePlugins(Example)
