@@ -4,6 +4,6 @@ libraryDependencies += "commons-io" % "commons-io" % "2.6"
 
 addSbtPlugin("com.thoughtworks.sbt-scala-js-map" % "sbt-scala-js-map" % "3.0.0")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.26")
 
 addSbtPlugin("com.thoughtworks.example" % "sbt-example" % "3.0.0")
