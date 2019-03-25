@@ -8,4 +8,4 @@
 
 These utilities are used in [DeepLearning.scala](https://github.com/ThoughtWorksInc/DeepLearning.scala/) 2.0 to build its plugin system.
 
-See [Scaladoc](https://javadoc.io/doc/com.thoughtworks.feature/factory_2.11) for a complete list of these utilities.
+See [Scaladoc](https://javadoc.io/page/com.thoughtworks.feature/factory_2.12/latest/com/thoughtworks/feature/index.html) for a complete list of these utilities.
