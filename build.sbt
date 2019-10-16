@@ -1,8 +1,6 @@
-publishArtifact := false
+publish / skip := true
 
 organization in ThisBuild := "com.thoughtworks.feature"
-
-crossScalaVersions in ThisBuild := Seq("2.11.11-bin-typelevel-4", "2.12.4-bin-typelevel-4")
 
 parallelExecution in Global in Test := false
 
@@ -92,28 +90,29 @@ lazy val `mixins-ImplicitsSingletonJVM` = `mixins-ImplicitsSingleton`.jvm
 
 lazy val `mixins-ImplicitsSingletonJS` = `mixins-ImplicitsSingleton`.js
 
-lazy val unidoc = project
-  .enablePlugins(StandaloneUnidoc, TravisUnidocTitle)
-  .settings(
-    scalacOptions += "-Yliteral-types",
-    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch),
-    unidocProjectFilter in ScalaUnidoc in BaseUnidocPlugin.autoImport.unidoc := {
-      inProjects(
-        UntyperJVM,
-        MixinJVM,
-        DemixinJVM,
-        ConstructorJVM,
-        CallerJVM,
-        TheJVM,
-        FactoryJVM,
-        PartialApplyJVM,
-        ImplicitApplyJVM,
-        ByNameJVM,
-        `mixins-ImplicitsSingletonJVM`,
-        SelfTypeJVM,
-        StructuralJVM,
-        GlbJVM
-      )
-    }
+enablePlugins(ScalaUnidocPlugin)
+
+scalacOptions += "-Yliteral-types"
+
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10")
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch)
+
+ScalaUnidoc / unidoc / unidocProjectFilter := {
+  inProjects(
+    UntyperJVM,
+    MixinJVM,
+    DemixinJVM,
+    ConstructorJVM,
+    CallerJVM,
+    TheJVM,
+    FactoryJVM,
+    PartialApplyJVM,
+    ImplicitApplyJVM,
+    ByNameJVM,
+    `mixins-ImplicitsSingletonJVM`,
+    SelfTypeJVM,
+    StructuralJVM,
+    GlbJVM
   )
+}
