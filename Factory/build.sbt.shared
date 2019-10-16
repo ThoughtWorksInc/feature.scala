@@ -4,7 +4,7 @@ libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.
 
 scalacOptions += "-Xexperimental"
 
-addCompilerPlugin(("org.scalameta" % "paradise" % "3.0.0-M10").cross(CrossVersion.patch))
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3" % Test
 
@@ -13,3 +13,5 @@ addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.2.1")
 libraryDependencies += "com.github.ghik" %% "silencer-lib" % "1.2.1"
 
 enablePlugins(Example)
+
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.8" % Test
