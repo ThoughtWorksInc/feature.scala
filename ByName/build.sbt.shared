@@ -8,6 +8,9 @@ scalacOptions += "-Ypartial-unification"
 
 libraryDependencies += "org.scalamock" %%% "scalamock-scalatest-support" % "3.6.0" % Test
 
-exampleSuperTypes+= "org.scalamock.scalatest.MockFactory"
+import meta._
+exampleSuperTypes += ctor"org.scalamock.scalatest.MockFactory"
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
 
 libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.13.0"

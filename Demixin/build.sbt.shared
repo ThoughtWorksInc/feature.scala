@@ -5,3 +5,5 @@ libraryDependencies += "com.chuusai" %%% "shapeless" % "2.3.3"
 incOptions in Test := (incOptions in Test).value.withRecompileOnMacroDef(java.util.Optional.of(true))
 
 enablePlugins(Example)
+
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.8" % Test

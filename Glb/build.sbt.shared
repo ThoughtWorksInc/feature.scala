@@ -1,6 +1,10 @@
 enablePlugins(Example)
 
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.8" % Test
+
 libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.value % Provided
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
 
 libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.13.0"
 
