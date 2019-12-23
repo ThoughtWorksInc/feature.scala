@@ -8,9 +8,9 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.pa
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3" % Test
 
-addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.2.1")
+addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.4.2")
 
-libraryDependencies += "com.github.ghik" %% "silencer-lib" % "1.2.1"
+libraryDependencies += "com.github.ghik" %% "silencer-lib" % "1.4.2"
 
 enablePlugins(Example)
 
