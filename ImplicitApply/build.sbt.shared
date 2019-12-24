@@ -8,4 +8,4 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.pa
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
 
-libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.13.0"
+libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.19.0"
