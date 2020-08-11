@@ -14,4 +14,4 @@ libraryDependencies += "com.github.ghik" %% "silencer-lib" % "1.4.2"
 
 enablePlugins(Example)
 
-libraryDependencies += "org.scalatest" %%% "scalatest" % "3.1.0" % Test
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.1.3" % Test
