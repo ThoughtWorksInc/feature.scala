@@ -6,4 +6,4 @@ libraryDependencies += scalaOrganization.value % "scala-reflect" % scalaVersion.
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.patch)
 
-libraryDependencies += "org.typelevel" %% "simulacrum" % "1.0.0"
+libraryDependencies += "org.typelevel" %% "simulacrum" % "1.0.1"
